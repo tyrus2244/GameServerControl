@@ -67,6 +67,13 @@ public sealed class ServerOrchestrator
             procState = !ok ? ProcessState.Unknown : (foundPid is null ? ProcessState.NotRunning : ProcessState.Running);
             pid = foundPid;
         }
+        else if (!OperatingSystem.IsWindows())
+        {
+            // Vm hosting needs Hyper-V; on Linux we just report unknown so the dashboard
+            // can show a clean "not supported" hint instead of hammering PS with unknown cmdlets.
+            vmState = VmState.Unknown;
+            procState = ProcessState.Unknown;
+        }
         else
         {
             vmState = await _hv.GetStateAsync(def.VmName, ct);
@@ -192,8 +199,10 @@ public sealed class ServerOrchestrator
             return new ActionResult(true, $"Already running (pid={pidAlready})", corr);
         }
 
-        // Scheduled-task lifecycle (Windrose pattern) — preserves the existing autostart-on-boot config
-        if (!string.IsNullOrWhiteSpace(def.ScheduledTaskName))
+        // Scheduled-task lifecycle (Windrose pattern) — preserves the existing autostart-on-boot config.
+        // Only used on Windows; Linux falls through to direct Process.Start (autostart is the user's
+        // systemd unit's job, not ours).
+        if (!string.IsNullOrWhiteSpace(def.ScheduledTaskName) && _local.HasScheduledTaskSupport)
         {
             // The toggle is authoritative: starting via the dashboard means autostart is intended,
             // so make sure the task is enabled (Start fails if the task is currently disabled).
@@ -238,6 +247,9 @@ public sealed class ServerOrchestrator
 
     private async Task<ActionResult> StartVmAsync(ServerDef def, string corr, CancellationToken ct)
     {
+        if (!OperatingSystem.IsWindows())
+            return new ActionResult(false, "Vm hosting mode requires Windows + Hyper-V. Use BareMetal on Linux.", corr);
+
         var state = await _hv.GetStateAsync(def.VmName, ct);
         if (state != VmState.Running)
         {
@@ -293,7 +305,7 @@ public sealed class ServerOrchestrator
 
         if (def.HostingMode == HostingMode.BareMetal)
         {
-            if (!string.IsNullOrWhiteSpace(def.ScheduledTaskName))
+            if (!string.IsNullOrWhiteSpace(def.ScheduledTaskName) && _local.HasScheduledTaskSupport)
             {
                 // Disable BEFORE ending — prevents "restart on failure" or boot-time autostart
                 // from racing our taskkill. The dashboard toggle is authoritative; stopping here

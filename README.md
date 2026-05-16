@@ -79,48 +79,124 @@ LICENSE                       MIT
 
 ## Install
 
-### Requirements
-- **Windows 10 / 11 / Server 2019+** on the host running the agent
-- **.NET 8 SDK** for building (.NET 8 Runtime is enough at runtime once published)
-- **Tailscale** strongly recommended for any remote use
-- **Hyper-V role enabled** if you want VM-hosted servers (bare-metal hosting works without it)
+### Supported hosts
 
-### Build
+|              | Windows                            | Linux                              |
+|--------------|------------------------------------|------------------------------------|
+| **Agent**    | ✅ Bare-metal **and** Hyper-V VMs   | ✅ Bare-metal only (no Hyper-V)     |
+| **Native client (WPF)** | ✅                       | ❌ — WPF is Windows-only            |
+| **Web UI**   | ✅                                  | ✅                                  |
+| **Autostart**| Windows Task Scheduler             | systemd unit (provided)            |
+| **Auto-discover** | Steam registry + Steam library | Steam library (~/.steam, ~/.local/share/Steam) |
+
+Linux users administer the fleet through the **web UI** at `http://<agent>:5099/` or by running the Windows client on a separate Windows machine over Tailscale.
+
+---
+
+### Windows install
+
+#### Requirements
+- Windows 10 / 11 / Server 2019+
+- **.NET 8 SDK** to build (or grab artifacts from [Actions](../../actions))
+- **Tailscale** recommended
+- **Hyper-V role** only needed if hosting servers inside VMs
+
+#### Build, configure, deploy
 
 ```powershell
 git clone https://github.com/tyrus2244/GameServerControl.git
 cd GameServerControl
 dotnet build -c Release
-```
 
-### Configure (one-time)
-
-```powershell
-# Copy example configs into place — the agent reads from these.
 copy src\GameServerControl.Agent\appsettings.json.example src\GameServerControl.Agent\appsettings.json
 copy src\GameServerControl.Agent\servers.json.example     src\GameServerControl.Agent\servers.json
-```
 
-Edit `appsettings.json` to set `Agent:Bind` to your Tailscale IP (or LAN address). Leave `ApiToken` as the placeholder — the agent generates a strong random token on first boot and writes it back.
-
-### Deploy the agent as a Windows service
-
-```powershell
 dotnet publish src\GameServerControl.Agent -c Release -o C:\GameServerControl\Agent
 sc.exe create GameServerControlAgent binPath= "C:\GameServerControl\Agent\GameServerControl.Agent.exe" start= auto
 sc.exe start  GameServerControlAgent
+
+dotnet publish src\GameServerControl.Client -c Release -o C:\GameServerControl\Client
+C:\GameServerControl\Client\GameServerControl.exe
 ```
 
-On first start, watch the Windows Event Log (Application source `GameServerControlAgent`) or the console: it prints the generated API token once.
+On first agent start, the API token is printed once to the console / Event Log — paste it into the client's **Settings**.
 
-### Run the client
+---
+
+### Linux install
+
+#### Requirements
+- Any modern Linux (Debian/Ubuntu, Fedora/RHEL, Arch)
+- **.NET 8 SDK** ([install guide](https://learn.microsoft.com/dotnet/core/install/linux))
+- `systemd` (standard on all the above)
+
+#### One-shot install with the included script
+
+```bash
+git clone https://github.com/tyrus2244/GameServerControl.git
+cd GameServerControl
+sudo bash deploy/linux/install.sh
+```
+
+That script:
+1. Builds + publishes the agent for `linux-x64` (framework-dependent)
+2. Installs it to `/opt/gameservercontrol/agent`
+3. Creates a system user `gsc` with no login shell
+4. Installs the systemd unit `gameservercontrol-agent.service` and enables/starts it
+5. Tails journalctl long enough to capture the auto-generated API token and prints it for you
+
+After install:
+- Service status: `systemctl status gameservercontrol-agent`
+- Live logs:      `journalctl -u gameservercontrol-agent -f`
+- Web UI:         `http://<this-host>:5099/`
+- Config:         `/opt/gameservercontrol/agent/appsettings.json`
+- Server defs:    `/opt/gameservercontrol/agent/servers.json`
+
+#### Manual build (no installer)
+
+```bash
+git clone https://github.com/tyrus2244/GameServerControl.git
+cd GameServerControl
+dotnet publish src/GameServerControl.Agent -c Release -r linux-x64 --self-contained false -o ~/gsc-agent
+cd ~/gsc-agent
+cp appsettings.json.example appsettings.json
+./GameServerControl.Agent
+```
+
+The agent prints its generated API token on first run. Use that with the web UI at `http://localhost:5099/` (or a Windows client over Tailscale).
+
+#### Linux notes
+
+- **VM hosting mode is unsupported.** Use `"HostingMode": "BareMetal"` only.
+- **Autostart-on-boot** for game servers should be done with your own systemd unit per server, e.g.:
+  ```ini
+  [Unit]
+  Description=Satisfactory dedicated server
+  After=network-online.target
+
+  [Service]
+  User=gsc
+  WorkingDirectory=/srv/gameservers/satisfactory
+  ExecStart=/srv/gameservers/satisfactory/FactoryServer.sh -log -unattended
+  Restart=on-failure
+  RestartSec=15s
+
+  [Install]
+  WantedBy=multi-user.target
+  ```
+  The agent's `ScheduledTaskName` field is ignored on Linux (it's Task-Scheduler-only).
+- **Auto-discover** picks up Steam libraries under `~/.steam/steam`, `~/.local/share/Steam`, and Flatpak Steam installs, plus bare-metal installs under `~/gameservers`, `/srv/gameservers`, `/opt/gameservers`, `/var/lib/gameservers`.
+
+### Run the client (Windows only)
+
+The WPF client only runs on Windows. Linux users use the web UI. On Windows:
 
 ```powershell
 dotnet publish src\GameServerControl.Client -c Release -o C:\GameServerControl\Client
 C:\GameServerControl\Client\GameServerControl.exe
 ```
 
-Open **Settings**, paste the agent URL (`http://100.x.y.z:5099`) and the API token, save. The dashboard connects and you'll see your existing servers (or a clean slate). Click **🔍 Discover** to auto-detect any installed dedicated servers — each found install gets an **Add** button that pre-fills the New Server wizard with real paths.
+Open **Settings**, paste the agent URL (`http://100.x.y.z:5099`) and the API token, save. Click **🔍 Discover** to auto-detect installed servers.
 
 ## Usage
 

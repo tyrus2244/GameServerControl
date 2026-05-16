@@ -53,10 +53,9 @@ builder.Services.AddSingleton<GameServerControl.Agent.Admin.SatisfactoryAdminCli
 // Dynamic auto-discovery extensions (one per game). Inject as IEnumerable in consumers.
 builder.Services.AddSingleton<IDynamicSchemaExtension, PalworldDynamicSchema>();
 builder.Services.AddSingleton<IDynamicSchemaExtension, SatisfactoryDynamicSchema>();
-#pragma warning disable CA1416 // Discovery types are Windows-only by design — agent only runs on Windows.
+// Discovery is cross-platform: probes Windows registry on Windows, Linux Steam paths on Linux.
 builder.Services.AddSingleton<GameServerControl.Agent.Discovery.SteamLibraryReader>();
 builder.Services.AddSingleton<GameServerControl.Agent.Discovery.ServerDiscoveryService>();
-#pragma warning restore CA1416
 builder.Services.AddSingleton<GameConfigFactory>();
 builder.Services.AddSingleton<SourceRconClient>();
 builder.Services.AddSingleton<IGameRcon, PalworldRcon>();
@@ -117,10 +116,8 @@ var api = app.MapGroup("/api").RequireAuthorization();
 
 api.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow }));
 
-#pragma warning disable CA1416
 api.MapGet("/discover", (GameServerControl.Agent.Discovery.ServerDiscoveryService disco) =>
     Results.Ok(disco.Discover()));
-#pragma warning restore CA1416
 
 api.MapGet("/download/client", (HttpContext http) =>
 {

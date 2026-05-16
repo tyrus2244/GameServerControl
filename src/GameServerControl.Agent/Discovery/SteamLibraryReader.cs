@@ -1,37 +1,40 @@
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 namespace GameServerControl.Agent.Discovery;
 
-// Registry access is Windows-only by design. The whole agent targets Windows
-// (Hyper-V cmdlets + Windows Task Scheduler + Steam-on-Windows paths).
-
 /// <summary>
 /// Reads Steam library state from disk WITHOUT requiring the Steam client to be running.
 ///
-/// Steam stores its library list in &lt;SteamInstall&gt;\steamapps\libraryfolders.vdf — a Valve
-/// custom key-value format. Each library has a &lt;LibraryPath&gt;\steamapps\common\&lt;game&gt;
-/// directory plus an appmanifest_&lt;appid&gt;.acf for every installed app.
+/// Cross-platform:
+///   - On Windows: probes registry (HKLM\WOW6432Node\Valve\Steam, HKCU\Valve\Steam) + common paths.
+///   - On Linux:   probes ~/.steam/steam, ~/.local/share/Steam, /usr/local/games/steam, etc.
 ///
-/// We extract just the bits we need (library paths + installed app IDs and their installdir)
-/// with a tiny tokenizer instead of pulling in a full VDF library.
+/// The VDF (libraryfolders.vdf) and ACF (appmanifest_*.acf) formats are identical on both
+/// platforms, so once we have a Steam install path the rest is shared code.
 /// </summary>
-[SupportedOSPlatform("windows")]
 public sealed class SteamLibraryReader
 {
     private readonly ILogger<SteamLibraryReader> _logger;
     public SteamLibraryReader(ILogger<SteamLibraryReader> logger) { _logger = logger; }
 
     /// <summary>
-    /// Find the Steam client install root. Tries registry first, then common Windows paths.
-    /// Returns null if no Steam install is detected.
+    /// Find the Steam client install root. Returns null if no Steam install is detected.
     /// </summary>
     public string? FindSteamInstallPath()
     {
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? FindSteamOnWindows()
+            : FindSteamOnLinux();
+    }
+
+    [SupportedOSPlatform("windows")]
+    private string? FindSteamOnWindows()
+    {
         try
         {
-            // HKLM (64-bit Steam on Windows installs here under WOW6432Node)
             using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
             var hklmPath = hklm?.OpenSubKey(@"SOFTWARE\Valve\Steam")?.GetValue("InstallPath") as string;
             if (!string.IsNullOrWhiteSpace(hklmPath) && Directory.Exists(hklmPath)) return hklmPath;
@@ -46,12 +49,28 @@ public sealed class SteamLibraryReader
         }
         catch (Exception ex) { _logger.LogDebug(ex, "HKCU Steam lookup failed"); }
 
-        // Fallback to common paths
-        foreach (var p in new[] {
-            @"C:\Program Files (x86)\Steam",
-            @"C:\Program Files\Steam",
-            @"D:\Steam",
-        })
+        foreach (var p in new[] { @"C:\Program Files (x86)\Steam", @"C:\Program Files\Steam", @"D:\Steam" })
+            if (Directory.Exists(p)) return p;
+        return null;
+    }
+
+    private string? FindSteamOnLinux()
+    {
+        // Order matters: ~/.steam/steam is the canonical symlink most distros use,
+        // ~/.local/share/Steam is the actual install on Flatpak/newer Steam,
+        // /usr/local paths are for distro-packaged installs.
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var candidates = new[]
+        {
+            Path.Combine(home, ".steam", "steam"),
+            Path.Combine(home, ".local", "share", "Steam"),
+            Path.Combine(home, ".var", "app", "com.valvesoftware.Steam", "data", "Steam"), // Flatpak
+            "/usr/local/games/Steam",
+            "/usr/local/share/Steam",
+            "/usr/games/steam",
+            "/opt/steam",
+        };
+        foreach (var p in candidates)
         {
             if (Directory.Exists(p)) return p;
         }
@@ -67,26 +86,21 @@ public sealed class SteamLibraryReader
         var result = new List<string>();
         var vdfPath = Path.Combine(steamInstallPath, "steamapps", "libraryfolders.vdf");
         if (!File.Exists(vdfPath))
-        {
-            // Older Steam versions kept it in config/libraryfolders.vdf
             vdfPath = Path.Combine(steamInstallPath, "config", "libraryfolders.vdf");
-        }
         if (!File.Exists(vdfPath))
         {
-            _logger.LogWarning("libraryfolders.vdf not found at expected paths under {Steam}", steamInstallPath);
-            result.Add(steamInstallPath); // assume only the default library
+            _logger.LogWarning("libraryfolders.vdf not found under {Steam}", steamInstallPath);
+            result.Add(steamInstallPath);
             return result;
         }
         try
         {
             var text = File.ReadAllText(vdfPath);
-            // Match every "path" "<value>" line — these are the library roots.
             foreach (Match m in Regex.Matches(text, "\"path\"\\s*\"([^\"]+)\"", RegexOptions.Compiled))
             {
-                var raw = m.Groups[1].Value;
-                // Steam writes paths with doubled backslashes in VDF; normalize.
-                var path = raw.Replace(@"\\", @"\");
-                if (Directory.Exists(path)) result.Add(path);
+                // VDF escapes backslashes; normalize for Windows. Linux paths are unaffected.
+                var raw = m.Groups[1].Value.Replace(@"\\", @"\");
+                if (Directory.Exists(raw)) result.Add(raw);
             }
         }
         catch (Exception ex)

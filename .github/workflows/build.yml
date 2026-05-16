@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build agent + client
+  windows-build:
+    name: Windows (agent + WPF client)
     runs-on: windows-latest
 
     steps:
@@ -27,22 +27,63 @@ jobs:
       - name: Build (Release)
         run: dotnet build -c Release --no-restore
 
-      - name: Publish agent
-        run: dotnet publish src/GameServerControl.Agent -c Release -o publish/Agent --no-build
+      - name: Publish agent (win-x64)
+        run: dotnet publish src/GameServerControl.Agent -c Release -r win-x64 --self-contained false -o publish/Agent-windows --no-build
 
-      - name: Publish client
-        run: dotnet publish src/GameServerControl.Client -c Release -o publish/Client --no-build
+      - name: Publish client (win-x64)
+        run: dotnet publish src/GameServerControl.Client -c Release -r win-x64 --self-contained false -o publish/Client-windows --no-build
 
-      - name: Upload agent artifact
+      - name: Upload Windows agent
         uses: actions/upload-artifact@v4
         with:
-          name: GameServerControl-Agent
-          path: publish/Agent
+          name: GameServerControl-Agent-windows
+          path: publish/Agent-windows
           if-no-files-found: error
 
-      - name: Upload client artifact
+      - name: Upload Windows client
         uses: actions/upload-artifact@v4
         with:
-          name: GameServerController
-          path: publish/Client
+          name: GameServerController-windows
+          path: publish/Client-windows
+          if-no-files-found: error
+
+  linux-build:
+    name: Linux (agent only — WPF doesn't run on Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # We only build Shared + Agent on Linux — the WPF client targets net8.0-windows
+      # and cannot be built outside Windows. Linux users interact via the web UI
+      # at http://<agent>:5099/ or the Windows client over Tailscale.
+      - name: Restore Shared
+        run: dotnet restore src/GameServerControl.Shared
+
+      - name: Restore Agent
+        run: dotnet restore src/GameServerControl.Agent
+
+      - name: Build Agent (Release)
+        run: dotnet build src/GameServerControl.Agent -c Release --no-restore
+
+      - name: Publish agent (linux-x64)
+        run: dotnet publish src/GameServerControl.Agent -c Release -r linux-x64 --self-contained false -o publish/Agent-linux --no-build
+
+      - name: Stage deploy artifacts alongside agent
+        run: |
+          cp deploy/linux/gameservercontrol-agent.service publish/Agent-linux/
+          cp deploy/linux/install.sh publish/Agent-linux/
+          chmod +x publish/Agent-linux/install.sh
+
+      - name: Upload Linux agent
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameServerControl-Agent-linux
+          path: publish/Agent-linux
           if-no-files-found: error

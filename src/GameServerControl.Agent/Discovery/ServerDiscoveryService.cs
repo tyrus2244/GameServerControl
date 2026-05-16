@@ -1,4 +1,4 @@
-using System.Runtime.Versioning;
+using System.Runtime.InteropServices;
 using GameServerControl.Agent.Servers;
 using GameServerControl.Shared;
 
@@ -6,18 +6,15 @@ namespace GameServerControl.Agent.Discovery;
 
 /// <summary>
 /// Scans the local host for installed dedicated servers and returns ones that match
-/// a known preset. Two sources:
+/// a known preset. Cross-platform:
 ///
-///   1. Steam libraries — for users who install via the Steam client. We read
-///      libraryfolders.vdf + appmanifest_*.acf.
-///   2. SteamCMD common paths (C:\GameServers\*) — for users who installed via
-///      steamcmd anonymously, the way GAMINGSERVER does Windrose and Satisfactory.
+///   1. Steam libraries — Windows or Linux, via libraryfolders.vdf + appmanifest_*.acf.
+///   2. Common bare-metal install roots — C:\GameServers\* on Windows;
+///      ~/gameservers, /srv/gameservers, /opt/gameservers on Linux.
 ///
-/// Matching is done against a hard-coded table keyed by Steam app ID. The set of
-/// known games matches <c>GamePresets.cs</c> on the client; the agent only needs
-/// (preset key, display name, relative exe path) to identify a real install.
+/// Per-game exe paths differ between platforms (e.g. FactoryServer.sh vs FactoryServer.exe),
+/// so the KnownGames table carries both. Whichever exists wins.
 /// </summary>
-[SupportedOSPlatform("windows")]
 public sealed class ServerDiscoveryService
 {
     private readonly ILogger<ServerDiscoveryService> _logger;
@@ -34,33 +31,35 @@ public sealed class ServerDiscoveryService
         _registry = registry;
     }
 
-    // Keep this in sync with GamePresets.cs on the client side.
-    // Entries here are the SUBSET that ship a public dedicated server we can detect.
     private sealed record KnownGame(
         string PresetKey,
         string DisplayName,
         string AppId,
-        string ExeRelative);
+        string ExeRelativeWindows,
+        string ExeRelativeLinux);
 
+    // Linux-side exes for games whose dedicated server ships on Linux. For Windows-only
+    // games we still set the Linux field — it just won't ever match an install on disk.
     private static readonly KnownGame[] KnownGames =
     {
-        new("windrose",      "Windrose",                 "4129620",  @"WindroseServer.exe"),
-        new("valheim",       "Valheim",                  "896660",   "valheim_server.exe"),
-        new("satisfactory",  "Satisfactory",             "1690800",  "FactoryServer.exe"),
-        new("palworld",      "Palworld",                 "2394010",  @"PalServer.exe"),
-        new("ark-asa",       "ARK: Survival Ascended",   "2430930",  @"ShooterGame\Binaries\Win64\ArkAscendedServer.exe"),
-        new("ark-se",        "ARK: Survival Evolved",    "376030",   @"ShooterGame\Binaries\Win64\ShooterGameServer.exe"),
-        new("rust",          "Rust",                     "258550",   "RustDedicated.exe"),
-        new("zomboid",       "Project Zomboid",          "380870",   "StartServer64.bat"),
-        new("7dtd",          "7 Days to Die",            "294420",   "7DaysToDieServer.exe"),
-        new("terraria",      "Terraria",                 "105600",   "TerrariaServer.exe"),
-        new("dst",           "Don't Starve Together",    "343050",   @"bin\dontstarve_dedicated_server_nullrenderer.exe"),
+        new("windrose",      "Windrose",                 "4129620",  @"WindroseServer.exe",                                       "WindroseServer.sh"),
+        new("valheim",       "Valheim",                  "896660",   "valheim_server.exe",                                        "start_server_xterm.sh"),
+        new("satisfactory",  "Satisfactory",             "1690800",  "FactoryServer.exe",                                         "FactoryServer.sh"),
+        new("palworld",      "Palworld",                 "2394010",  @"PalServer.exe",                                            "PalServer.sh"),
+        new("ark-asa",       "ARK: Survival Ascended",   "2430930",  @"ShooterGame\Binaries\Win64\ArkAscendedServer.exe",         "ShooterGame/Binaries/Linux/ArkAscendedServer"),
+        new("ark-se",        "ARK: Survival Evolved",    "376030",   @"ShooterGame\Binaries\Win64\ShooterGameServer.exe",         "ShooterGame/Binaries/Linux/ShooterGameServer"),
+        new("rust",          "Rust",                     "258550",   "RustDedicated.exe",                                         "RustDedicated"),
+        new("zomboid",       "Project Zomboid",          "380870",   "StartServer64.bat",                                         "start-server.sh"),
+        new("7dtd",          "7 Days to Die",            "294420",   "7DaysToDieServer.exe",                                      "startserver.sh"),
+        new("terraria",      "Terraria",                 "105600",   "TerrariaServer.exe",                                        "TerrariaServer.bin.x86_64"),
+        new("dst",           "Don't Starve Together",    "343050",   @"bin\dontstarve_dedicated_server_nullrenderer.exe",         "bin64/dontstarve_dedicated_server_nullrenderer"),
     };
 
-    /// <summary>
-    /// Runs the discovery scan and returns matches plus the list of libraries scanned (for UI display).
-    /// Cheap to call repeatedly — pure filesystem reads.
-    /// </summary>
+    private static bool IsWindows() => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    private static string ExeRel(KnownGame g) => IsWindows() ? g.ExeRelativeWindows : g.ExeRelativeLinux;
+
+    /// <summary>Cheap, pure-filesystem scan. Safe to call as often as needed.</summary>
     public DiscoverResponse Discover()
     {
         var byAppId = KnownGames.ToDictionary(g => g.AppId, g => g);
@@ -73,7 +72,7 @@ public sealed class ServerDiscoveryService
         var found = new List<DiscoveredServer>();
         var librariesScanned = new List<string>();
 
-        // ---- 1) Steam library scan ----
+        // 1) Steam library scan
         var steamPath = _steam.FindSteamInstallPath();
         if (steamPath is not null)
         {
@@ -85,10 +84,10 @@ public sealed class ServerDiscoveryService
                 {
                     if (!byAppId.TryGetValue(appId, out var game)) continue;
                     var installPath = Path.Combine(lib, "steamapps", "common", installDir);
-                    var exePath = Path.Combine(installPath, game.ExeRelative);
+                    var exePath = Path.Combine(installPath, ExeRel(game));
                     if (!File.Exists(exePath))
                     {
-                        _logger.LogDebug("Found {App} in Steam library but exe missing at {Exe}", game.DisplayName, exePath);
+                        _logger.LogDebug("{App} listed in Steam but exe missing at {Exe}", game.DisplayName, exePath);
                         continue;
                     }
                     found.Add(new DiscoveredServer(
@@ -107,20 +106,17 @@ public sealed class ServerDiscoveryService
             _logger.LogDebug("No Steam install detected; skipping Steam library scan.");
         }
 
-        // ---- 2) SteamCMD common paths (C:\GameServers\*) ----
-        foreach (var root in CommonSteamCmdRoots())
+        // 2) Common bare-metal / SteamCMD install roots
+        foreach (var root in CommonInstallRoots())
         {
             if (!Directory.Exists(root)) continue;
             librariesScanned.Add(root);
             foreach (var dir in Directory.EnumerateDirectories(root))
             {
-                // Look for any known game's exe inside this folder. We don't have an appmanifest
-                // here so we match by exe path. First hit wins.
                 foreach (var g in KnownGames)
                 {
-                    var exePath = Path.Combine(dir, g.ExeRelative);
+                    var exePath = Path.Combine(dir, ExeRel(g));
                     if (!File.Exists(exePath)) continue;
-                    // Skip if we already added this exact install path from Steam scan
                     if (found.Any(f => string.Equals(NormalizePath(f.InstallPath), NormalizePath(dir), StringComparison.OrdinalIgnoreCase)))
                         break;
                     found.Add(new DiscoveredServer(
@@ -139,13 +135,28 @@ public sealed class ServerDiscoveryService
         return new DiscoverResponse(found.ToArray(), librariesScanned.ToArray());
     }
 
-    private static IEnumerable<string> CommonSteamCmdRoots() => new[]
+    private static IEnumerable<string> CommonInstallRoots()
     {
-        @"C:\GameServers",
-        @"D:\GameServers",
-        @"C:\Servers",
-        @"D:\Servers",
-    };
+        if (IsWindows())
+        {
+            return new[]
+            {
+                @"C:\GameServers",
+                @"D:\GameServers",
+                @"C:\Servers",
+                @"D:\Servers",
+            };
+        }
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        return new[]
+        {
+            Path.Combine(home, "gameservers"),
+            Path.Combine(home, "GameServers"),
+            "/srv/gameservers",
+            "/opt/gameservers",
+            "/var/lib/gameservers",
+        };
+    }
 
     private static string NormalizePath(string p)
     {

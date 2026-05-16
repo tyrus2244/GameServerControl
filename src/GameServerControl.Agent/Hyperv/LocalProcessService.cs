@@ -14,6 +14,14 @@ public sealed class LocalProcessService
     private readonly ILogger<LocalProcessService> _logger;
     public LocalProcessService(ILogger<LocalProcessService> logger) { _logger = logger; }
 
+    /// <summary>
+    /// True on Windows (we have <c>schtasks</c>) — false on Linux/macOS.
+    /// Orchestrator uses this to decide whether to drive autostart via the Task Scheduler
+    /// or fall through to direct <see cref="Process.Start"/>. Linux operators get
+    /// auto-restart by running the agent under a systemd unit with <c>Restart=on-failure</c>.
+    /// </summary>
+    public bool HasScheduledTaskSupport => OperatingSystem.IsWindows();
+
     public Task<(bool Ok, int? Pid, string Error)> StartProcessAsync(string exePath, string[] args, string workingDir, CancellationToken ct = default)
     {
         try
@@ -112,6 +120,7 @@ public sealed class LocalProcessService
 
     public async Task<bool> StartScheduledTaskAsync(string taskName, CancellationToken ct = default)
     {
+        if (!HasScheduledTaskSupport) return false;
         var (ok, output) = await RunCommandAsync($"schtasks /run /tn \"{taskName}\"", "", TimeSpan.FromSeconds(15), ct);
         if (!ok) _logger.LogWarning("schtasks /run for {Task} failed: {Out}", taskName, output);
         return ok;
@@ -119,12 +128,14 @@ public sealed class LocalProcessService
 
     public async Task<bool> EndScheduledTaskAsync(string taskName, CancellationToken ct = default)
     {
+        if (!HasScheduledTaskSupport) return true; // nothing to end
         var (ok, _) = await RunCommandAsync($"schtasks /end /tn \"{taskName}\"", "", TimeSpan.FromSeconds(15), ct);
         return ok;
     }
 
     public async Task<bool?> GetAutostartAsync(string taskName, CancellationToken ct = default)
     {
+        if (!HasScheduledTaskSupport) return null; // unsupported here — return "unknown"
         // /fo LIST /v outputs plain text. Look for the "Scheduled Task State:" row whose value is "Enabled" or "Disabled".
         // (schtasks /xml is UTF-16 with BOM which mangles when read through cmd's default codepage.)
         var (ok, output) = await RunCommandAsync($"schtasks /query /tn \"{taskName}\" /fo LIST /v", "", TimeSpan.FromSeconds(10), ct);
@@ -146,18 +157,33 @@ public sealed class LocalProcessService
 
     public async Task<bool> SetAutostartAsync(string taskName, bool enabled, CancellationToken ct = default)
     {
+        if (!HasScheduledTaskSupport) return true; // nothing to set — orchestrator treats as a no-op
         var flag = enabled ? "/enable" : "/disable";
         var (ok, _) = await RunCommandAsync($"schtasks /change /tn \"{taskName}\" {flag}", "", TimeSpan.FromSeconds(15), ct);
         return ok;
     }
 
-    public async Task KillByNamesAsync(IEnumerable<string> exeNames, CancellationToken ct = default)
+    /// <summary>
+    /// Cross-platform kill-by-process-name. Strips an .exe suffix if present
+    /// (the leaf name with or without extension matches <see cref="Process.GetProcessesByName"/>).
+    /// </summary>
+    public Task KillByNamesAsync(IEnumerable<string> exeNames, CancellationToken ct = default)
     {
-        foreach (var name in exeNames.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var raw in exeNames.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            var leaf = name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? name : name + ".exe";
-            await RunCommandAsync($"taskkill /f /im \"{leaf}\"", "", TimeSpan.FromSeconds(10), ct);
+            var bare = Path.GetFileNameWithoutExtension(raw);
+            if (string.IsNullOrEmpty(bare)) continue;
+            try
+            {
+                foreach (var p in Process.GetProcessesByName(bare))
+                {
+                    try { p.Kill(entireProcessTree: true); }
+                    catch (Exception ex) { _logger.LogDebug(ex, "Kill pid {Pid} ({Name}) failed", p.Id, bare); }
+                }
+            }
+            catch (Exception ex) { _logger.LogDebug(ex, "Kill by name {Name} failed", bare); }
         }
+        return Task.CompletedTask;
     }
 
     public async Task<(bool Ok, string Output)> RunCommandAsync(string commandLine, string workingDir, TimeSpan timeout, CancellationToken ct = default)

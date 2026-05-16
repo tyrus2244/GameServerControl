@@ -1,0 +1,30 @@
+# Default: let git auto-detect text vs binary.
+* text=auto
+
+# Shell scripts must have LF on disk (CRLF breaks bash on Linux).
+*.sh        text eol=lf
+*.bash      text eol=lf
+
+# systemd unit files are read by Linux daemons that don't tolerate CRLF.
+*.service   text eol=lf
+
+# C# / project files prefer CRLF on Windows but work with either; let git auto-detect.
+*.cs        text
+*.csproj    text
+*.sln       text
+
+# YAML — GitHub Actions handles either, but LF is conventional.
+*.yml       text eol=lf
+*.yaml      text eol=lf
+
+# JSON / markdown — convention is LF but cross-platform tooling tolerates both.
+*.json      text
+*.md        text
+
+# Binary blobs — never normalize.
+*.png       binary
+*.jpg       binary
+*.ico       binary
+*.pfx       binary
+*.dll       binary
+*.exe       binary
