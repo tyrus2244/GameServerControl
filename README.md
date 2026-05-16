@@ -79,17 +79,29 @@ LICENSE                       MIT
 
 ## Install
 
-### Supported hosts
+### Supported hosts — feature parity
 
-|              | Windows                            | Linux                              |
-|--------------|------------------------------------|------------------------------------|
-| **Agent**    | ✅ Bare-metal **and** Hyper-V VMs   | ✅ Bare-metal only (no Hyper-V)     |
-| **Native client (WPF)** | ✅                       | ❌ — WPF is Windows-only            |
-| **Web UI**   | ✅                                  | ✅                                  |
-| **Autostart**| Windows Task Scheduler             | systemd unit (provided)            |
-| **Auto-discover** | Steam registry + Steam library | Steam library (~/.steam, ~/.local/share/Steam) |
-
-Linux users administer the fleet through the **web UI** at `http://<agent>:5099/` or by running the Windows client on a separate Windows machine over Tailscale.
+|                                         | Windows | Linux |
+|-----------------------------------------|---------|-------|
+| **Bare-metal hosting** (start/stop/restart/backup/update) | ✅ | ✅ |
+| **Hyper-V VM hosting**                  | ✅ | ❌ (Hyper-V doesn't exist on Linux) |
+| **Auto-restart of agent on crash**      | ✅ (Windows Service) | ✅ (systemd `Restart=on-failure`) |
+| **Auto-start of game servers on boot**  | ✅ (built-in Task Scheduler wrapper) | ✅ (user-written systemd unit — recipe in README) |
+| **Live status + log tail** (SignalR)    | ✅ | ✅ |
+| **RCON** (Source-engine + Palworld)     | ✅ | ✅ |
+| **Satisfactory Admin API** (AGS, server identity) | ✅ | ✅ |
+| **Per-game curated config editors**     | ✅ (4 games × dozens of fields) | ✅ (identical) |
+| **Auto-discovered config fields**       | ✅ (Palworld + Satisfactory) | ✅ (identical) |
+| **🔍 Auto-discover installed servers**  | ✅ (registry + Steam library + C:\GameServers) | ✅ (~/.steam, ~/.local/share/Steam, Flatpak, ~/gameservers, /srv, /opt) |
+| **File-zip backups**                    | ✅ | ✅ |
+| **Hyper-V checkpoint backups**          | ✅ | ❌ (Hyper-V only) |
+| **SteamCMD updates** (one-click)        | ✅ (uses `steamcmd.exe` on PATH) | ✅ (uses `steamcmd` on PATH or `Agent:SteamCmdPath`) |
+| **First-run API token auto-generation** | ✅ | ✅ |
+| **Audit log of mutations**              | ✅ | ✅ |
+| **HTTPS with self-signed cert**         | ✅ | ✅ |
+| **Web UI**                              | ✅ | ✅ |
+| **Native WPF client**                   | ✅ | ❌ (WPF is Windows-only — use web UI or remote Windows client over Tailscale) |
+| **Scheduled maintenance** (daily restart / weekly update / hourly backup) | ✅ (Windows Task Scheduler) | ⚠️ (manual — recipe with systemd timers below) |
 
 ---
 
@@ -186,6 +198,26 @@ The agent prints its generated API token on first run. Use that with the web UI 
   ```
   The agent's `ScheduledTaskName` field is ignored on Linux (it's Task-Scheduler-only).
 - **Auto-discover** picks up Steam libraries under `~/.steam/steam`, `~/.local/share/Steam`, and Flatpak Steam installs, plus bare-metal installs under `~/gameservers`, `/srv/gameservers`, `/opt/gameservers`, `/var/lib/gameservers`.
+- **Scheduled maintenance** (the `MaintenanceScheduler` API) is Windows-only because it drives Windows Task Scheduler. To get the same effect on Linux, write systemd timers that POST to the agent's own API. Example for a nightly restart at 04:00:
+  ```ini
+  # /etc/systemd/system/gsc-windrose-restart.service
+  [Unit]
+  Description=Nightly restart of Windrose via GameServerControl
+  [Service]
+  Type=oneshot
+  ExecStart=/usr/bin/curl -fsS -X POST -H "Authorization: Bearer <YOUR-TOKEN>" http://127.0.0.1:5099/api/servers/windrose-main/restart
+  ```
+  ```ini
+  # /etc/systemd/system/gsc-windrose-restart.timer
+  [Unit]
+  Description=Nightly restart of Windrose
+  [Timer]
+  OnCalendar=*-*-* 04:00:00
+  Persistent=true
+  [Install]
+  WantedBy=timers.target
+  ```
+  Then `sudo systemctl enable --now gsc-windrose-restart.timer`. Same pattern for hourly backups (`/backup`) and weekly updates (`/update`).
 
 ### Run the client (Windows only)
 

@@ -45,6 +45,17 @@ public sealed class MaintenanceScheduler
 
     public async Task ApplyAsync(string serverId, MaintenanceSchedule? schedule, CancellationToken ct = default)
     {
+        if (!_local.HasScheduledTaskSupport)
+        {
+            // Linux: no Task Scheduler. Operators wire up scheduled restarts/updates/backups
+            // via their own systemd timer units (or cron). The agent surfaces this as a clean
+            // no-op rather than throwing — see SECURITY.md / README for the recipe.
+            _logger.LogInformation(
+                "MaintenanceScheduler.ApplyAsync({Id}) skipped — scheduled tasks are Windows-only. " +
+                "Use a systemd timer or cron job that POSTs to /api/servers/{Id}/restart|update|backup.",
+                serverId, serverId);
+            return;
+        }
         // Always wipe existing tasks for this server, then recreate enabled ones.
         await RemoveTaskAsync(TaskName(serverId, "restart"), ct);
         await RemoveTaskAsync(TaskName(serverId, "update"), ct);
@@ -107,6 +118,7 @@ public sealed class MaintenanceScheduler
 
     public async Task<MaintenanceSchedule?> ReadAsync(string serverId, CancellationToken ct = default)
     {
+        if (!_local.HasScheduledTaskSupport) return null; // Linux: not supported here
         // Query the three task names; reconstruct best-effort schedule.
         var schedule = new MaintenanceSchedule();
         bool found = false;

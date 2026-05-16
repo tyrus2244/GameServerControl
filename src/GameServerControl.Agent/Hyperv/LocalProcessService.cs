@@ -190,16 +190,28 @@ public sealed class LocalProcessService
     {
         try
         {
+            // Cross-platform shell-out: cmd.exe /c on Windows, /bin/sh -c on Linux/macOS.
+            // We pass the command as a single ArgumentList entry on POSIX so quoting/escaping
+            // doesn't get re-mangled by .NET's argument splitter.
             var psi = new ProcessStartInfo
             {
-                FileName = "cmd.exe",
-                Arguments = "/c " + commandLine,
                 WorkingDirectory = string.IsNullOrWhiteSpace(workingDir) ? Environment.CurrentDirectory : workingDir,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+            if (OperatingSystem.IsWindows())
+            {
+                psi.FileName = "cmd.exe";
+                psi.Arguments = "/c " + commandLine;
+            }
+            else
+            {
+                psi.FileName = "/bin/sh";
+                psi.ArgumentList.Add("-c");
+                psi.ArgumentList.Add(commandLine);
+            }
             using var p = Process.Start(psi);
             if (p is null) return (false, "Process.Start returned null");
 

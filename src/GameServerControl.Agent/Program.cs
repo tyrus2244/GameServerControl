@@ -121,6 +121,15 @@ api.MapGet("/discover", (GameServerControl.Agent.Discovery.ServerDiscoveryServic
 
 api.MapGet("/download/client", (HttpContext http) =>
 {
+    if (!OperatingSystem.IsWindows())
+    {
+        // The WPF client is Windows-only — no native Linux client exists. Linux operators use
+        // the web UI at "/" or the prebuilt Windows client artifact from GitHub Releases.
+        return Results.NotFound(
+            "No native client bundle available on this Linux agent. " +
+            "Use the web UI at /, or download a Windows client from " +
+            "https://github.com/tyrus2244/GameServerControl/releases / Actions.");
+    }
     var zipPath = @"C:\GameServerControl\Client.zip";
     var clientDir = @"C:\GameServerControl\Client";
     // Auto-regenerate if missing or older than the published exe
