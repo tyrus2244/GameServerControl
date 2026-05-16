@@ -43,8 +43,14 @@ agent.pfx
 *.key
 secrets.json
 
-# Runtime artifacts
-Logs/
+# Runtime artifacts (NOTE: keep this narrow so the source folder
+# src/GameServerControl.Agent/Logs/ — which has actual .cs in it — survives)
+/Logs/
+**/bin/Logs/
+**/Debug/Logs/
+**/Release/Logs/
+**/publish/Logs/
+C:/GameServerControl/Agent/Logs/
 *.log
 audit-*.jsonl
 *.bak
