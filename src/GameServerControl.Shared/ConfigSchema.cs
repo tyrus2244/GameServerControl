@@ -50,6 +50,8 @@ public static class ConfigSchemas
                 Description: "Shown in the server browser. Changes apply immediately, no restart."),
             new ConfigField("ClientPassword", "Join password", ConfigFieldType.Password,
                 Description: "Required for players to connect. Empty = no password."),
+            new ConfigField("ActiveSessionName", "Session ID (read-only)", ConfigFieldType.Text,
+                Description: "Name of the currently loaded save / session. This is what players see in the server browser — the Satisfactory equivalent of Windrose's invite code. Changes when you load a different save in-game; otherwise tracks Server name."),
         }),
         new ConfigSection("Server limits", new[]
         {

@@ -110,7 +110,15 @@ public sealed class SatisfactoryConfig : IGameConfig
             try
             {
                 var serverName = await _api.QueryServerNameAsync(def, ct);
-                if (serverName is not null) result["ServerName"] = serverName;
+                if (serverName is not null)
+                {
+                    result["ServerName"] = serverName;
+                    // Surface the same value as the read-only "Session ID" field — in modern
+                    // Satisfactory RenameServer + active-session-name move together, so they're
+                    // the same string. Loading a different save in-game would let them diverge
+                    // temporarily until the next read.
+                    result["ActiveSessionName"] = serverName;
+                }
 
                 var ags = await _api.GetAdvancedGameSettingsAsync(def, ct);
                 if (ags is not null)
@@ -171,6 +179,9 @@ public sealed class SatisfactoryConfig : IGameConfig
             }
             if (schemaKey.Equals("ServerName", StringComparison.OrdinalIgnoreCase)) { serverNameNew = rawVal; continue; }
             if (schemaKey.Equals("ClientPassword", StringComparison.OrdinalIgnoreCase)) { clientPasswordNew = rawVal; continue; }
+            // ActiveSessionName is read-only — the server manages it. To change it, edit
+            // ServerName (RenameServer) or load a different save in-game.
+            if (schemaKey.Equals("ActiveSessionName", StringComparison.OrdinalIgnoreCase)) continue;
             if (IniKeyMap.TryGetValue(schemaKey, out var m))
             {
                 var path = Path.Combine(def.GuestWorkingDir, m.Rel);
