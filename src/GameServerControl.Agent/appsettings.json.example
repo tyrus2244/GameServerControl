@@ -1,0 +1,33 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "GameServerControl": "Debug"
+    }
+  },
+  "Agent": {
+    "//": "Bind the agent to a private interface. Tailscale IP recommended. Never use 0.0.0.0 on a public-facing NIC without HTTPS + a reverse proxy.",
+    "Bind": "http://127.0.0.1:5099",
+
+    "//BindHttps": "Set this to also listen with HTTPS, e.g. https://100.x.y.z:5443. CertPassword is required if you do.",
+    "BindHttps": "",
+    "CertPassword": "",
+
+    "//": "Leave ApiToken as the placeholder below — the agent generates a strong random token on first boot and writes it back here.",
+    "ApiToken": "REPLACE_WITH_32_CHARS+",
+
+    "ServersJsonPath": "servers.json",
+
+    "//AuditLogPath": "Override audit log directory. Defaults to <agent>/Logs/audit/",
+    "AuditLogPath": "",
+
+    "GuestCredentials": {
+      "//": "Per-VM PowerShell-Direct credentials. Only used for Hyper-V hosting mode.",
+      "default": {
+        "Username": "Administrator",
+        "Password": "CHANGE_ME"
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "//": "Example servers.json. Two illustrative entries: a bare-metal Windrose install and a VM-hosted Valheim. Use the dashboard's 'Discover' button to auto-detect installed servers and add them via the GUI.",
+  "Servers": [
+    {
+      "Id": "windrose-main",
+      "Name": "Windrose (Example)",
+      "GameType": "Windrose",
+      "HostingMode": "BareMetal",
+      "GuestExePath": "C:\\GameServers\\Windrose\\R5\\Binaries\\Win64\\WindroseServer-Win64-Shipping.exe",
+      "GuestWorkingDir": "C:\\GameServers\\Windrose",
+      "StartArgs": [],
+      "SaveDirs": [
+        "C:\\GameServers\\Windrose\\R5\\Saved"
+      ],
+      "SteamAppId": "4129620",
+      "LogPathInGuest": "C:\\GameServers\\Windrose\\R5\\Saved\\Logs\\R5.log",
+      "ScheduledTaskName": "Windrose-DedicatedServer",
+      "StopProcessNames": [
+        "WindroseServer.exe",
+        "WindroseServer-Win64-Shipping.exe"
+      ],
+      "VmName": ""
+    },
+    {
+      "Id": "valheim-1",
+      "Name": "Valheim (Example, VM-hosted)",
+      "GameType": "SteamGeneric",
+      "HostingMode": "Vm",
+      "VmName": "VALHEIM-VM",
+      "GuestExePath": "C:\\ValheimServer\\valheim_server.exe",
+      "GuestWorkingDir": "C:\\ValheimServer",
+      "StartArgs": [
+        "-nographics",
+        "-batchmode",
+        "-name", "Example Server",
+        "-port", "2456",
+        "-world", "MyWorld",
+        "-password", "changeme"
+      ],
+      "SaveDirs": [
+        "C:\\Users\\Administrator\\AppData\\LocalLow\\IronGate\\Valheim"
+      ],
+      "SteamAppId": "896660",
+      "GuestCredentialId": "default"
+    }
+  ]
+}

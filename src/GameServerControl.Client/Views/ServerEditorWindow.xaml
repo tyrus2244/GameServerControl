@@ -1,0 +1,255 @@
+<Window x:Class="GameServerControl.Client.Views.ServerEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:GameServerControl.Client.ViewModels"
+        xmlns:shared="clr-namespace:GameServerControl.Shared;assembly=GameServerControl.Shared"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="Server"
+        Width="640" Height="700"
+        Background="{StaticResource BgBrush0}"
+        Foreground="{StaticResource TextBrush}"
+        TextElement.Foreground="{StaticResource TextBrush}"
+        TextElement.FontFamily="Segoe UI"
+        TextElement.FontSize="13"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0,0,0,16">
+            <TextBlock x:Name="HeaderText" Text="Add Server" FontSize="20" FontWeight="Bold"/>
+            <TextBlock Text="Pick a preset to pre-fill, or use Custom and type it all by hand."
+                       Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,12"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Preset" Width="100" VerticalAlignment="Center"/>
+                <ComboBox x:Name="PresetCombo"
+                          ItemsSource="{Binding Presets}"
+                          DisplayMemberPath="Label"
+                          SelectedValuePath="Key"
+                          SelectedValue="{Binding SelectedPresetKey}"
+                          Width="320" Padding="6,4"
+                          Background="{StaticResource BgBrush2}"
+                          Foreground="{StaticResource TextBrush}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Form -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Background="{StaticResource BgBrush0}">
+            <StackPanel>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="ID" VerticalAlignment="Center"/>
+                    <TextBox  Grid.Column="1" Text="{Binding Id, UpdateSourceTrigger=PropertyChanged}" x:Name="IdBox"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
+                    <TextBox  Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="Hosting mode"/>
+                        <TextBlock Text="Where the server process runs" Foreground="{StaticResource TextDimBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableHostingModes}"
+                              SelectedItem="{Binding HostingMode}"
+                              Background="{StaticResource BgBrush2}"
+                              Foreground="{StaticResource TextBrush}"
+                              Padding="6,4"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="Hyper-V VM"/>
+                        <TextBlock Text="Only used when mode = Vm" Foreground="{StaticResource TextDimBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding VmName, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Game type" VerticalAlignment="Center"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableGameTypes}"
+                              SelectedItem="{Binding GameType}"
+                              Background="{StaticResource BgBrush2}"
+                              Foreground="{StaticResource TextBrush}"
+                              Padding="6,4"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Server EXE" VerticalAlignment="Center"/>
+                    <TextBox  Grid.Column="1" Text="{Binding GuestExePath, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Working dir" VerticalAlignment="Center"/>
+                    <TextBox  Grid.Column="1" Text="{Binding GuestWorkingDir, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Start args" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                        <TextBlock Text="(one per line)" Foreground="{StaticResource TextDimBrush}" FontSize="11"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding StartArgsText, UpdateSourceTrigger=PropertyChanged}"
+                              AcceptsReturn="True" Height="100" VerticalScrollBarVisibility="Auto"
+                              TextWrapping="NoWrap" FontFamily="Consolas, Cascadia Mono"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Save dirs" Margin="0,4,0,0"/>
+                        <TextBlock Text="(one per line, in guest)" Foreground="{StaticResource TextDimBrush}" FontSize="11"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding SaveDirsText, UpdateSourceTrigger=PropertyChanged}"
+                              AcceptsReturn="True" Height="72" VerticalScrollBarVisibility="Auto"
+                              TextWrapping="NoWrap" FontFamily="Consolas, Cascadia Mono"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Steam App ID" VerticalAlignment="Center"/>
+                    <TextBox  Grid.Column="1" Text="{Binding SteamAppId, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Cred ID" VerticalAlignment="Center"/>
+                    <TextBox  Grid.Column="1" Text="{Binding GuestCredentialId, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Log path" VerticalAlignment="Center"/>
+                    <TextBox  Grid.Column="1" Text="{Binding LogPathInGuest, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <TextBlock Text="RCON (live admin console)" FontWeight="SemiBold" Margin="0,12,0,8" Foreground="{StaticResource InfoBrush}"/>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="RCON host"/>
+                        <TextBlock Text="'auto' = discover via Hyper-V" Foreground="{StaticResource TextDimBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding RconHost, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="RCON port"/>
+                        <TextBlock Text="Empty = no RCON" Foreground="{StaticResource TextDimBrush}" FontSize="11"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding RconPort, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="RCON password"/>
+                        <TextBlock Text="For Palworld this is the Admin password" Foreground="{StaticResource TextDimBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding RconPassword, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <TextBlock Text="Bare-metal lifecycle (Windows Task Scheduler)" FontWeight="SemiBold" Margin="0,12,0,8" Foreground="{StaticResource InfoBrush}"/>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="Scheduled task"/>
+                        <TextBlock Text="If set, Start/Stop drive Task Scheduler (preserves autostart)" Foreground="{StaticResource TextDimBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding ScheduledTaskName, UpdateSourceTrigger=PropertyChanged}"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="Stop process names"/>
+                        <TextBlock Text="One .exe leaf per line; Stop kills all" Foreground="{StaticResource TextDimBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding StopProcessNamesText, UpdateSourceTrigger=PropertyChanged}"
+                              AcceptsReturn="True" Height="64" VerticalScrollBarVisibility="Auto"
+                              FontFamily="Consolas, Cascadia Mono"/>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Validation -->
+        <TextBlock Grid.Row="2" Text="{Binding ValidationError}" Foreground="{StaticResource BadBrush}" Margin="0,8,0,0"
+                   TextWrapping="Wrap" Visibility="{Binding ValidationError, Converter={x:Static vm:NotNullVisibilityConverter.Instance}}"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Style="{StaticResource ActionButton}" Click="Cancel_Click"/>
+            <Button Content="Save"   Style="{StaticResource ActionButton}" Click="Save_Click" IsDefault="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

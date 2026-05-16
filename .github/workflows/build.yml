@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build agent + client
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (Release)
+        run: dotnet build -c Release --no-restore
+
+      - name: Publish agent
+        run: dotnet publish src/GameServerControl.Agent -c Release -o publish/Agent --no-build
+
+      - name: Publish client
+        run: dotnet publish src/GameServerControl.Client -c Release -o publish/Client --no-build
+
+      - name: Upload agent artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameServerControl-Agent
+          path: publish/Agent
+          if-no-files-found: error
+
+      - name: Upload client artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameServerController
+          path: publish/Client
+          if-no-files-found: error

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#050A0E"/>
+<title>Game Server Control</title>
+<style>
+  :root {
+    --bg0:#050A0E; --bg1:#0D1B23; --bg2:#142730; --bg3:#1B3340;
+    --border:#2A3D47; --text:#DCEFEA; --textDim:#6F8B85;
+    --accent:#3FFF8E; --accentDim:#176B41;
+    --bad:#FF5C6A; --warn:#D29922; --info:#66D9FF;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg0);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+  a{color:var(--info)}
+  header{background:var(--bg1);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10}
+  header h1{margin:0;font-size:18px;font-weight:700}
+  header .url{color:var(--textDim);font-size:12px}
+  header .pill{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:4px 10px;font-size:12px;font-weight:600}
+  header .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--bad)}
+  header .pill.up .dot{background:var(--accent)}
+  header button{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-weight:600;cursor:pointer}
+  header button:hover{border-color:var(--accent);background:var(--accentDim)}
+  main{padding:16px 20px;max-width:1200px;margin:0 auto}
+  .card{background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px}
+  .card .top{display:flex;align-items:flex-start;gap:12px}
+  .card .info{flex:1;min-width:0}
+  .card .name{font-size:17px;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .card .name .icon{font-size:22px}
+  .card .name .type{color:var(--textDim);font-size:13px;font-weight:400}
+  .card .meta{margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .card .meta .lbl{color:var(--textDim)}
+  .pill2{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+  .pill2 .dot{width:8px;height:8px;border-radius:50%}
+  .pill2.invite{background:var(--accentDim);border-color:var(--accent)}
+  .pill2.invite .code{font-family:Consolas,Cascadia Mono,monospace;font-weight:700}
+  .pill2 button{background:transparent;border:0;color:var(--text);cursor:pointer;font-size:12px;padding:0 2px}
+  .toggle{position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;cursor:pointer}
+  .toggle input{opacity:0;width:0;height:0}
+  .toggle .track{position:absolute;inset:0;background:var(--bg3);border:1px solid var(--border);border-radius:13px;transition:.2s}
+  .toggle .thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--text);transition:.2s}
+  .toggle input:checked + .track{background:var(--accent);border-color:var(--accent)}
+  .toggle input:checked + .track + .thumb{left:24px}
+  .toggle input:disabled + .track{opacity:.5;cursor:default}
+  .actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .actions button{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-weight:600;cursor:pointer;font-size:13px}
+  .actions button:hover{border-color:var(--accent);background:var(--accentDim)}
+  .actions button.danger:hover{border-color:var(--bad);background:var(--bad);color:#fff}
+  .actions button:disabled{opacity:.4;cursor:default;background:var(--bg3);border-color:var(--border)}
+  .login{max-width:420px;margin:80px auto;background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:24px}
+  .login h2{margin:0 0 16px;font-size:20px}
+  .login label{display:block;margin:14px 0 6px;color:var(--textDim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .login input{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:Consolas,Cascadia Mono,monospace;font-size:13px}
+  .login button{margin-top:20px;width:100%;background:var(--accent);color:#04150A;border:0;border-radius:6px;padding:12px;font-weight:700;cursor:pointer;font-size:14px}
+  .toast{position:fixed;bottom:16px;right:16px;background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--text);font-size:13px;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none;max-width:380px}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast.err{border-color:var(--bad)}
+  .toast.ok{border-color:var(--accent)}
+  .empty{text-align:center;color:var(--textDim);padding:60px 0}
+  @media (max-width:540px){
+    header{padding:10px 12px;flex-wrap:wrap}
+    header h1{font-size:15px}
+    header .url{display:none}
+    main{padding:12px}
+    .card .meta{font-size:12px}
+    .actions button{padding:9px 11px;font-size:12.5px}
+  }
+</style>
+</head>
+<body>
+
+<div id="login" class="login" style="display:none">
+  <h2>🎮 Game Server Control</h2>
+  <p style="color:var(--textDim);margin:0">Paste your agent API token to connect.</p>
+  <label>Agent URL</label>
+  <input id="login-url" type="text" placeholder="http://100.90.15.50:5099"/>
+  <label>API Token</label>
+  <input id="login-token" type="password" placeholder="bearer token"/>
+  <button onclick="login()">Connect</button>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <h1>🎮 Game Server Control</h1>
+    <div class="url" id="header-url"></div>
+    <div class="pill" id="conn"><span class="dot"></span><span id="conn-label">Connecting…</span></div>
+    <button onclick="refresh()">↻ Refresh</button>
+    <button onclick="signout()">⎋ Sign out</button>
+  </header>
+  <main id="cards"><div class="empty">Loading…</div></main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = sel => document.querySelector(sel);
+const fmt = (s) => s == null ? '' : String(s);
+
+let CFG = { url: '', token: '' };
+let SERVERS = [];
+let STATUS = {};
+let ICONS = {
+  Windrose: '⛵', Minecraft: '⛏',
+  '896660':'⚔','2394010':'🐾','1690800':'⚙','2430930':'🦖','376030':'🦖',
+  '258550':'🔧','294420':'🧟','105600':'🌳','343050':'❄','380870':'🧟'
+};
+
+function iconFor(def){
+  if (def.gameType === 'Windrose') return ICONS.Windrose;
+  if (def.gameType === 'Minecraft') return ICONS.Minecraft;
+  if (def.steamAppId && ICONS[def.steamAppId]) return ICONS[def.steamAppId];
+  return '🎮';
+}
+
+function toast(msg, kind){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (kind || '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>{ t.className='toast'; }, 2800);
+}
+
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({}, opts.headers || {}, {
+    'Authorization': 'Bearer ' + CFG.token,
+    'Content-Type': 'application/json',
+  });
+  const r = await fetch(CFG.url + path, opts);
+  if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + (await r.text()));
+  if (r.status === 204) return null;
+  return r.json();
+}
+
+async function loadServers(){
+  SERVERS = await api('/api/servers');
+  await refresh();
+}
+
+async function refresh(){
+  try {
+    const all = await api('/api/status');
+    STATUS = {};
+    for (const s of all) STATUS[s.id] = s;
+    setConnected(true);
+  } catch (e){
+    setConnected(false);
+    return;
+  }
+  render();
+}
+
+function setConnected(up){
+  const pill = $('#conn');
+  pill.classList.toggle('up', up);
+  $('#conn-label').textContent = up ? ('Connected · ' + CFG.url) : 'Lost contact — retrying…';
+}
+
+function vmBadge(s){
+  switch (s){
+    case 'Running': return ['VM RUNNING', 'var(--accent)'];
+    case 'Off': return ['VM OFF', 'var(--bad)'];
+    case 'NotApplicable': return ['BARE METAL', 'var(--info)'];
+    case 'Unknown': return ['VM ?', 'var(--textDim)'];
+    default: return ['VM ' + (s||'').toUpperCase(), 'var(--info)'];
+  }
+}
+function procBadge(s, pid){
+  switch (s){
+    case 'Running': return ['GAME UP' + (pid?' · pid '+pid:''), 'var(--accent)'];
+    case 'NotRunning': return ['GAME DOWN', 'var(--bad)'];
+    default: return ['GAME ?', 'var(--textDim)'];
+  }
+}
+
+function render(){
+  const root = $('#cards');
+  if (!SERVERS.length){ root.innerHTML = '<div class="empty">No servers configured.</div>'; return; }
+  root.innerHTML = SERVERS.map(def => renderCard(def, STATUS[def.id])).join('');
+}
+
+function renderCard(def, st){
+  st = st || {};
+  const isOn = st.processState === 'Running';
+  const isBareMetal = (def.hostingMode||'') === 'BareMetal';
+  const hostingLabel = isBareMetal ? 'Bare metal' : ('VM: ' + (def.vmName||''));
+  const [vmText, vmColor] = vmBadge(st.vmState);
+  const [pText, pColor] = procBadge(st.processState, st.pidInGuest);
+  const cpuRam = (st.cpuPercent!=null || st.memoryMB!=null)
+    ? `<span class="pill2">${st.cpuPercent!=null?`${(+st.cpuPercent).toFixed(1)}% CPU`:''}${(st.cpuPercent!=null && st.memoryMB!=null)?' · ':''}${st.memoryMB!=null?`${st.memoryMB.toLocaleString()} MB`:''}</span>`
+    : '';
+  const invite = (st.metadata && st.metadata.InviteCode)
+    ? `<span class="pill2 invite">🔗 INVITE <span class="code">${st.metadata.InviteCode}</span> <button onclick="copyInvite('${st.metadata.InviteCode}')" title="copy">📋</button></span>`
+    : '';
+  return `
+    <div class="card" data-id="${def.id}">
+      <div class="top">
+        <div class="info">
+          <div class="name"><span class="icon">${iconFor(def)}</span>${def.name}<span class="type">· ${def.gameType}</span></div>
+          <div class="meta">
+            <span class="lbl">${hostingLabel}</span>
+            <span class="pill2"><span class="dot" style="background:${vmColor}"></span>${vmText}</span>
+            <span class="pill2"><span class="dot" style="background:${pColor}"></span>${pText}</span>
+            ${cpuRam}
+            ${invite}
+          </div>
+        </div>
+        <label class="toggle" title="${isOn?'Stop':'Start'}">
+          <input type="checkbox" ${isOn?'checked':''} onchange="toggleServer('${def.id}', this.checked, this)"/>
+          <span class="track"></span><span class="thumb"></span>
+        </label>
+      </div>
+      <div class="actions">
+        <button onclick="act('${def.id}','start')">▶ Start</button>
+        <button class="danger" onclick="act('${def.id}','stop')">■ Stop</button>
+        <button onclick="act('${def.id}','restart')">↻ Restart</button>
+        <button onclick="act('${def.id}','backup')">⏷ Backup</button>
+        <button onclick="act('${def.id}','update')">⤓ Update</button>
+      </div>
+    </div>`;
+}
+
+async function toggleServer(id, desired, el){
+  el.disabled = true;
+  try {
+    const action = desired ? 'start' : 'stop';
+    await act(id, action);
+  } finally {
+    el.disabled = false;
+  }
+}
+
+async function act(id, action){
+  toast(`[${id}] ${action}…`);
+  try {
+    const r = await api(`/api/servers/${id}/${action}`, { method:'POST' });
+    toast(`[${id}] ${r.success?'OK':'FAIL'}: ${r.message}`, r.success?'ok':'err');
+    setTimeout(refresh, 1500);
+  } catch (e){
+    toast(`[${id}] ERROR: ${e.message}`, 'err');
+  }
+}
+
+function copyInvite(code){
+  navigator.clipboard?.writeText(code).then(
+    ()=>toast('Invite code copied: '+code, 'ok'),
+    ()=>toast('Copy failed','err')
+  );
+}
+
+function login(){
+  const url = $('#login-url').value.trim().replace(/\/+$/,'');
+  const tok = $('#login-token').value.trim();
+  if (!url || !tok){ toast('Need both fields', 'err'); return; }
+  CFG = { url, token: tok };
+  localStorage.setItem('gsc', JSON.stringify(CFG));
+  start();
+}
+
+function signout(){
+  localStorage.removeItem('gsc');
+  CFG = { url:'', token:'' };
+  $('#app').style.display = 'none';
+  $('#login').style.display = 'block';
+  $('#login-url').value = '';
+  $('#login-token').value = '';
+}
+
+async function start(){
+  $('#login').style.display = 'none';
+  $('#app').style.display = 'block';
+  $('#header-url').textContent = '· ' + CFG.url;
+  try {
+    await api('/api/health');
+    await loadServers();
+    setInterval(refresh, 5000);
+  } catch (e){
+    toast('Could not reach agent: '+e.message, 'err');
+    signout();
+  }
+}
+
+// Boot
+(function(){
+  // Allow token via URL: ?token=xxx[&url=http://...]
+  const params = new URLSearchParams(location.search);
+  if (params.has('token')){
+    CFG.token = params.get('token');
+    CFG.url = params.get('url') || (location.origin);
+    localStorage.setItem('gsc', JSON.stringify(CFG));
+    history.replaceState({}, '', location.pathname);
+    start();
+    return;
+  }
+  const saved = localStorage.getItem('gsc');
+  if (saved){
+    try { CFG = JSON.parse(saved); if (CFG.token && CFG.url){ start(); return; } } catch{}
+  }
+  $('#login').style.display = 'block';
+  $('#login-url').value = location.origin;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+# Build output
+bin/
+obj/
+publish/
+out/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Bb]uild/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+*.swp
+
+# .NET
+*.dll
+*.pdb
+*.exe
+!docs/**/*.exe
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+**/Properties/launchSettings.json
+
+# Sensitive — never commit
+appsettings.json
+appsettings.*.json
+!appsettings.json.example
+!appsettings.Development.json.example
+servers.json
+!servers.json.example
+agent.pfx
+*.pem
+*.key
+secrets.json
+
+# Runtime artifacts
+Logs/
+*.log
+audit-*.jsonl
+*.bak
+*.tmp
+
+# OS junk
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Test / coverage
+TestResults/
+*.coverage
+*.coveragexml
+coverage*.xml
+coverage*.json
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Generated bundles
+Client.zip
+*.zip
+!docs/**/*.zip
+
+# Misc local helper scripts (one-offs the project doesn't need)
+_setup_admin.ps1
+_deploy.ps1
+_fix_*.ps1
+_setup_admin.result
+_setup_admin.log
+_deploy.result
+_deploy.log
+_fix_*.result
+_fix_*.log
+
+# Internal two-Claude coordination doc (not for public repo)
+COORDINATION.md

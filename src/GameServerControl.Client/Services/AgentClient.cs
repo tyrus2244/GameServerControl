@@ -1,0 +1,188 @@
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using GameServerControl.Shared;
+
+namespace GameServerControl.Client.Services;
+
+public sealed class AgentClient
+{
+    private readonly HttpClient _http;
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    public AgentClient(string baseUrl, string token)
+    {
+        var handler = new HttpClientHandler
+        {
+            // Tailnet is already E2E-encrypted by WireGuard; accept the agent's self-signed cert.
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        };
+        _http = new HttpClient(handler) { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromMinutes(35) };
+        if (!string.IsNullOrEmpty(token))
+            _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    public async Task<bool> PingAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var r = await _http.GetAsync("/api/health", ct);
+            return r.IsSuccessStatusCode;
+        }
+        catch { return false; }
+    }
+
+    public async Task<List<ServerDef>> ListServersAsync(CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync("/api/servers", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<List<ServerDef>>(s, JsonOpts) ?? new();
+    }
+
+    public async Task<DiscoverResponse> DiscoverServersAsync(CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync("/api/discover", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<DiscoverResponse>(s, JsonOpts) ?? new(Array.Empty<DiscoveredServer>(), Array.Empty<string>());
+    }
+
+    public async Task<ServerStatus?> GetStatusAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{id}/status", ct);
+        if (!r.IsSuccessStatusCode) return null;
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<ServerStatus>(s, JsonOpts);
+    }
+
+    public async Task<List<ServerStatus>> GetAllStatusAsync(CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync("/api/status", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<List<ServerStatus>>(s, JsonOpts) ?? new();
+    }
+
+    public async Task<ServerDef> CreateServerAsync(ServerDef def, CancellationToken ct = default)
+    {
+        var json = JsonSerializer.Serialize(def, JsonOpts);
+        var r = await _http.PostAsync("/api/servers", new StringContent(json, System.Text.Encoding.UTF8, "application/json"), ct);
+        var body = await r.Content.ReadAsStringAsync(ct);
+        if (!r.IsSuccessStatusCode) throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {body}");
+        return JsonSerializer.Deserialize<ServerDef>(body, JsonOpts) ?? throw new InvalidOperationException("Empty body");
+    }
+
+    public async Task<ServerDef> UpdateServerAsync(string id, ServerDef def, CancellationToken ct = default)
+    {
+        var json = JsonSerializer.Serialize(def, JsonOpts);
+        var r = await _http.PutAsync($"/api/servers/{id}", new StringContent(json, System.Text.Encoding.UTF8, "application/json"), ct);
+        var body = await r.Content.ReadAsStringAsync(ct);
+        if (!r.IsSuccessStatusCode) throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {body}");
+        return JsonSerializer.Deserialize<ServerDef>(body, JsonOpts) ?? throw new InvalidOperationException("Empty body");
+    }
+
+    public async Task DeleteServerAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.DeleteAsync($"/api/servers/{id}", ct);
+        if (!r.IsSuccessStatusCode)
+            throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {await r.Content.ReadAsStringAsync(ct)}");
+    }
+
+    public sealed record ConfigPayload(ConfigSchema? Schema, Dictionary<string, string> Values);
+
+    public async Task<ConfigPayload> GetServerConfigAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{id}/config", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<ConfigPayload>(s, JsonOpts) ?? new ConfigPayload(null, new());
+    }
+
+    public async Task PutServerConfigAsync(string id, Dictionary<string, string> values, CancellationToken ct = default)
+    {
+        var json = JsonSerializer.Serialize(values, JsonOpts);
+        var r = await _http.PutAsync($"/api/servers/{id}/config", new StringContent(json, System.Text.Encoding.UTF8, "application/json"), ct);
+        if (!r.IsSuccessStatusCode)
+            throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {await r.Content.ReadAsStringAsync(ct)}");
+    }
+
+    public async Task<RconPlayer[]> RconListPlayersAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{id}/rcon/players", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<RconPlayer[]>(s, JsonOpts) ?? Array.Empty<RconPlayer>();
+    }
+
+    public async Task<RconResponse> RconRunAsync(string id, RconStandardCommand cmd, string? payload, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(new { Command = cmd.ToString(), Payload = payload }, JsonOpts);
+        var r = await _http.PostAsync($"/api/servers/{id}/rcon/command",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        var s = await r.Content.ReadAsStringAsync(ct);
+        if (!r.IsSuccessStatusCode)
+            return new RconResponse(false, "", $"HTTP {(int)r.StatusCode}: {s}");
+        return JsonSerializer.Deserialize<RconResponse>(s, JsonOpts) ?? new RconResponse(false, "", "Empty response");
+    }
+
+    public sealed record AutostartStatus(bool Supported, bool? Enabled);
+
+    public async Task<AutostartStatus> GetAutostartAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{id}/autostart", ct);
+        if (!r.IsSuccessStatusCode) return new AutostartStatus(false, null);
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<AutostartStatus>(s, JsonOpts) ?? new AutostartStatus(false, null);
+    }
+
+    public async Task SetAutostartAsync(string id, bool enabled, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(new { Enabled = enabled }, JsonOpts);
+        var r = await _http.PostAsync($"/api/servers/{id}/autostart",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        if (!r.IsSuccessStatusCode)
+            throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {await r.Content.ReadAsStringAsync(ct)}");
+    }
+
+    public async Task<bool> StartLogTailAsync(string id, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(new { Action = "start" }, JsonOpts);
+        var r = await _http.PostAsync($"/api/servers/{id}/logs/tail",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        return r.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> StopLogTailAsync(string id, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(new { Action = "stop" }, JsonOpts);
+        var r = await _http.PostAsync($"/api/servers/{id}/logs/tail",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        return r.IsSuccessStatusCode;
+    }
+
+    public async Task<ActionResult> ActionAsync(string id, ServerActionKind kind, bool stopVm = true, bool force = false, CancellationToken ct = default)
+    {
+        var path = kind switch
+        {
+            ServerActionKind.Start => $"/api/servers/{id}/start",
+            ServerActionKind.Stop => $"/api/servers/{id}/stop?stopVm={stopVm}&force={force}",
+            ServerActionKind.Restart => $"/api/servers/{id}/restart",
+            ServerActionKind.Backup => $"/api/servers/{id}/backup",
+            ServerActionKind.Update => $"/api/servers/{id}/update",
+            ServerActionKind.ApplyConfig => $"/api/servers/{id}/apply",
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        };
+        var r = await _http.PostAsync(path, new StringContent(""), ct);
+        var s = await r.Content.ReadAsStringAsync(ct);
+        if (!r.IsSuccessStatusCode)
+            return new ActionResult(false, $"HTTP {(int)r.StatusCode}: {s}", null);
+        return JsonSerializer.Deserialize<ActionResult>(s, JsonOpts) ?? new ActionResult(false, "Empty response", null);
+    }
+}
