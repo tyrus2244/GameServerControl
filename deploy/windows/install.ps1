@@ -150,9 +150,11 @@ Write-Ok "Client unpacked."
 $svcExePath = Join-Path $agentDir 'GameServerControl.Agent.exe'
 $existing   = Get-Service -Name $svcName -ErrorAction SilentlyContinue
 
+# NOTE: parameter name is intentionally NOT `$Args` — that shadows PowerShell's automatic
+# variable and breaks splatting (the function sees an empty array, sc.exe prints help, we throw).
 function Invoke-Sc {
-    param([string[]]$Args, [string]$Label)
-    $out = & sc.exe @Args 2>&1
+    param([string[]]$ScArgs, [string]$Label)
+    $out = & sc.exe @ScArgs 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "$Label failed (sc.exe exit $LASTEXITCODE): $($out -join ' | ')"
     }
@@ -161,25 +163,26 @@ function Invoke-Sc {
 
 if ($existing) {
     Write-Step "Refreshing $svcName service"
-    Invoke-Sc @('config', $svcName, 'binPath=', "`"$svcExePath`"") 'sc.exe config' | Out-Null
+    Invoke-Sc -ScArgs @('config', $svcName, 'binPath=', "`"$svcExePath`"") -Label 'sc.exe config' | Out-Null
     Write-Ok "Service config refreshed."
 } else {
     Write-Step "Registering $svcName Windows service"
-    Invoke-Sc @('create', $svcName,
+    Invoke-Sc -ScArgs @('create', $svcName,
         'binPath=', "`"$svcExePath`"",
         'start=', 'auto',
-        'DisplayName=', 'GameServerControl Agent (TK-ECLIPSE)') 'sc.exe create' | Out-Null
+        'DisplayName=', 'GameServerControl Agent (TK-ECLIPSE)') -Label 'sc.exe create' | Out-Null
     # description is non-critical — log a warning instead of failing the whole install.
-    try { Invoke-Sc @('description', $svcName, "Self-hosted dashboard for game-server processes (start/stop/backup/update/RCON). github.com/$repo") 'sc.exe description' | Out-Null }
+    try { Invoke-Sc -ScArgs @('description', $svcName, "Self-hosted dashboard for game-server processes (start/stop/backup/update/RCON). github.com/$repo") -Label 'sc.exe description' | Out-Null }
     catch { Write-Warn2 "Couldn't set service description: $_" }
     Write-Ok "Service registered."
 }
 
 Write-Step "Starting $svcName"
-try { Invoke-Sc @('start', $svcName) 'sc.exe start' | Out-Null }
+try { Invoke-Sc -ScArgs @('start', $svcName) -Label 'sc.exe start' | Out-Null }
 catch {
-    # Service might already be Running, or might fail to start because of a config error
-    # in appsettings.json. Surface the actual sc.exe message either way.
+    # Service might already be Running (sc.exe returns 1056 for that), or might fail to start
+    # because of a config error in appsettings.json. Tolerate "already running"; surface anything
+    # else as a warning rather than crashing the install (the agent might already be up).
     Write-Warn2 "$_"
 }
 Start-Sleep -Seconds 3
