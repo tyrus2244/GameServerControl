@@ -173,7 +173,11 @@
                                         <Button Content="📊 Stats" Style="{StaticResource ActionButton}" Command="{Binding StatsCommand}" ToolTip="Live CPU/RAM history"/>
                                         <Button Content="⤓ Update" Style="{StaticResource ActionButton}" Command="{Binding UpdateCommand}"/>
                                         <Button Content="⚙ Configure" Style="{StaticResource ActionButton}" Command="{Binding ConfigureCommand}"/>
-                                        <Button Content="💬 Console" Style="{StaticResource ActionButton}" Command="{Binding ConsoleCommand}"/>
+                                        <Button Content="👥 Players" Style="{StaticResource ActionButton}" Command="{Binding PlayersCommand}"
+                                                ToolTip="Live RCON player list · kick / ban / broadcast"
+                                                Visibility="{Binding HasRcon, Converter={x:Static vm:BoolVisibilityConverter.Instance}}"/>
+                                        <Button Content="💬 Console" Style="{StaticResource ActionButton}" Command="{Binding ConsoleCommand}"
+                                                ToolTip="Full RCON console — raw commands, save world, shutdown countdown"/>
                                         <Button Content="📜 Log" Style="{StaticResource ActionButton}" Command="{Binding LogCommand}"/>
                                         <Button Content="🧩 Mods" Style="{StaticResource ActionButton}" Command="{Binding ModsCommand}" ToolTip="Manage server-side mods (BepInEx plugins, etc.)"/>
                                         <Button Content="⏰ Schedule" Style="{StaticResource ActionButton}" Command="{Binding ScheduleCommand}" ToolTip="Recurring restart / update / backup"/>

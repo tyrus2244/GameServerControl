@@ -17,7 +17,8 @@ public sealed partial class ServerViewModel : ObservableObject
         Action<ServerViewModel>? Mods = null,
         Action<ServerViewModel>? Backups = null,
         Action<ServerViewModel>? Schedule = null,
-        Action<ServerViewModel>? Stats = null);
+        Action<ServerViewModel>? Stats = null,
+        Action<ServerViewModel>? Players = null);
 
     private readonly Func<AgentClient?> _getClient;
     private readonly Action<string> _toast;
@@ -71,6 +72,9 @@ public sealed partial class ServerViewModel : ObservableObject
 
     [RelayCommand]
     private void Stats() => _cb.Stats?.Invoke(this);
+
+    [RelayCommand]
+    private void Players() => _cb.Players?.Invoke(this);
 
     // The maintainer's donate URL. Kept here as a single named constant so MainViewModel.DonateCommand
     // (the bottom-right footer link) and any future feature can reuse it without scattering the URL

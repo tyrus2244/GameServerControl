@@ -206,6 +206,22 @@ public sealed partial class MainViewModel : ObservableObject
         win.Show();
     }
 
+    private void OpenPlayersWindow(ServerViewModel vm)
+    {
+        var c = ClientFor(vm);
+        if (c is null) { Toast("Not connected — open Settings first."); return; }
+        if (vm.Def.RconPort is null or 0)
+        {
+            MessageBox.Show(
+                "RCON isn't configured for this server.\n\nOpen Edit and set RCON host/port/password, " +
+                "then enable RCON in the game's config (Configure → RCON section).",
+                "RCON not configured", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var win = new PlayersWindow(c, vm.Def) { Owner = Application.Current.MainWindow };
+        win.Show();
+    }
+
     private ServerViewModel.Callbacks BuildCallbacks() => new(
         Edit: vm => _ = EditServer(vm),
         Delete: vm => _ = DeleteServer(vm),
@@ -215,7 +231,8 @@ public sealed partial class MainViewModel : ObservableObject
         Mods: vm => OpenModsWindow(vm),
         Backups: vm => OpenBackupsWindow(vm),
         Schedule: vm => OpenScheduleWindow(vm),
-        Stats: vm => OpenStatsWindow(vm));
+        Stats: vm => OpenStatsWindow(vm),
+        Players: vm => OpenPlayersWindow(vm));
 
     private void OpenLogWindow(ServerViewModel vm)
     {
