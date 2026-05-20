@@ -28,9 +28,10 @@
 
 - **Bare-metal *and* Hyper-V VM hosting** — single UI manages both. Bare-metal servers run via Windows Task Scheduler with auto-restart-on-crash wrappers; VM servers use Hyper-V cmdlets + PowerShell Direct.
 - **🔍 Auto-discover installed servers** — one click scans Steam libraries (via `libraryfolders.vdf` + `appmanifest_*.acf`) and common SteamCMD paths, matches against 11+ known dedicated-server presets, marks already-configured installs.
+- **🧩 Server-side mod management** — browse + one-click install Valheim mods from Thunderstore right in the dashboard. **Filters to server-side-only mods by default** so players don't need to install anything on their end. Pluggable per game (`IModManager`); BepInEx flow today, Satisfactory/ARK extensible.
 - **Per-game config editor** — curated schemas (with units, sliders, dropdowns, tooltips) for Valheim · Palworld · Windrose · Satisfactory · ARK · Rust · 7DTD · Terraria · DST · Project Zomboid · Minecraft.
 - **Auto-discovered settings** — when a game ships a defaults file or admin API (Palworld's `DefaultPalWorldSettings.ini`, Satisfactory's `GetAdvancedGameSettings`), the editor surfaces *every* setting beyond the curated ones. Palworld jumps from 53 curated fields to **109 total**.
-- **Live Satisfactory Admin API integration** — claim server, rename, set client password, toggle all 13 Advanced Game Settings (NoPower, GodMode, FlightMode, StartingTier, …) without restarting. Applies instantly.
+- **Live Satisfactory Admin API integration** — claim server, rename, set client password, toggle all 13 Advanced Game Settings (NoPower, GodMode, FlightMode, StartingTier, …) without restarting. Applies instantly. Also surfaces the **current session name** as a read-only "Session ID" (analogous to Windrose's invite code).
 - **Backups** — Hyper-V checkpoints for VMs, zipped save-dir archives for bare-metal, with optional scheduled cadence.
 - **SteamCMD updates** — one button validates + updates any Steam-app-ID server.
 - **Live status + log tail** via SignalR.
@@ -240,6 +241,14 @@ Open **Settings**, paste the agent URL (`http://100.x.y.z:5099`) and the API tok
 - Click the **Config** button on a server's card. The editor shows curated sections at the top (polished labels, dropdowns, sliders) and an **"All settings (auto-discovered)"** section at the bottom for everything the game exposes that we haven't hand-curated.
 - For **Satisfactory**, the *Server identity (live via Admin API)* and *Advanced Game Settings* sections apply instantly — no restart. INI-backed fields require a restart.
 
+### Manage server-side mods
+- Click the **🧩 Mods** button on a server's card.
+- **Browse tab** — search Thunderstore (Valheim today) right in the app. **Defaults to server-side-only mods** so anything you install runs entirely on the server and players don't need to do anything. Each result shows a green **✓ server-side** badge.
+- **"Also show mods that require client install" checkbox** — toggle to see the full catalog. Mods that need client install get a yellow **⚠ needs client install** badge so you spot them immediately.
+- One-click **Install** downloads the zip, extracts it into `<install>/BepInEx/plugins/`, and remembers what it installed in a sidecar (`BepInEx/.gsc-mods.json`) so uninstall is precise.
+- **Installed tab** — list with per-row Uninstall + an "Advanced: install from URL" box for mods not on Thunderstore.
+- Restart the server after install/uninstall for changes to take effect.
+
 ### Backup / Update / Restart
 - **Backup** — Hyper-V checkpoint (VM) or zip of `SaveDirs` (bare-metal).
 - **Update** — runs SteamCMD `+app_update <SteamAppId> validate`.
@@ -265,7 +274,11 @@ Every endpoint under `/api/*` requires `Authorization: Bearer <token>`. JSON bod
 | GET/POST | `/api/servers/{id}/autostart` | Read or toggle the scheduled-task autostart flag. |
 | GET    | `/api/servers/{id}/rcon/players` | List players via RCON. |
 | POST   | `/api/servers/{id}/rcon/command` | Run an RCON command. |
-| GET    | `/api/download/client` | Download `GameServerController.zip` (publishes the client zipped). |
+| GET    | `/api/download/client` | Download `GameServerController.zip` (publishes the client zipped). Linux agents return 404 + a pointer to the web UI. |
+| GET    | `/api/servers/{id}/mods` | List installed server-side mods. |
+| GET    | `/api/servers/{id}/mods/search?q=&limit=&serverSideOnly=` | Search the game's mod marketplace. Defaults `serverSideOnly=true`. |
+| POST   | `/api/servers/{id}/mods/install` | Body: `{Url, DisplayName?}`. Downloads + extracts into the mods folder. |
+| DELETE | `/api/servers/{id}/mods/{modId}` | Removes the files the agent recorded for that mod. |
 
 SignalR hub at `/hubs/status` emits `statusChanged` + `logLine` events.
 
@@ -286,8 +299,9 @@ PRs welcome. Particularly interested in:
 - New game presets (`GamePresets.cs` + `ConfigSchema.cs` + optional `IGameConfig` impl)
 - New `IGameRcon` implementations
 - New `IDynamicSchemaExtension` providers (auto-discover settings for more games)
+- New `IModManager` implementations — Satisfactory (ficsit.app or Thunderstore community), ARK (Steam Workshop via SteamCMD `+workshop_download_item`), Palworld, etc. The Valheim BepInEx flow is the reference impl.
 - Hardening items called out as TODO in `SECURITY.md` (DPAPI encryption, rate limiting, role-based tokens)
-- Cross-platform support — agent is Windows-only by design (uses Hyper-V + Task Scheduler + DPAPI), but a Linux variant using systemd + Docker would be neat
+- More cross-platform polish — the agent already runs on Linux via systemd; a KVM/libvirt provider would close the Hyper-V gap on Linux hosts
 
 ## License
 
