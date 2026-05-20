@@ -125,7 +125,7 @@
 <body>
 
 <div id="login" class="login" style="display:none">
-  <h2>🎮 Game Server Control</h2>
+  <h2>Game Server Control</h2>
   <p style="color:var(--textDim);margin:0">Paste your agent API token to connect.</p>
   <label>Agent URL</label>
   <input id="login-url" type="text" placeholder="http://100.90.15.50:5099"/>
@@ -136,15 +136,14 @@
 
 <div id="app" style="display:none">
   <header>
-    <h1>🎮 Game Server Control</h1>
+    <h1>Game Server Control</h1>
     <div class="url" id="header-url"></div>
     <div class="pill" id="conn"><span class="dot"></span><span id="conn-label">Connecting…</span></div>
-    <button onclick="openCreateServer()" style="background:var(--accent);color:#fff;font-weight:700">🚀 Create Server</button>
-    <button onclick="refresh()">↻ Refresh</button>
-    <button onclick="signout()">⎋ Sign out</button>
+    <button onclick="openCreateServer()" style="background:var(--accent);color:#fff;font-weight:700">Create Server</button>
+    <button onclick="refresh()">Refresh</button>
+    <button onclick="signout()">Sign out</button>
   </header>
   <div id="updbar" class="updbar">
-    <span>⬆</span>
     <span id="updbar-msg">A new release is available.</span>
     <a id="updbar-link" href="#" target="_blank" rel="noopener noreferrer">View release notes →</a>
   </div>
@@ -155,7 +154,7 @@
 <div id="drawer" class="drawer">
   <header>
     <h2 id="drawer-title">…</h2>
-    <button class="close" onclick="closeDrawer()" title="Close">✕</button>
+    <button class="close" onclick="closeDrawer()" title="Close">×</button>
   </header>
   <div id="drawer-tabs" class="tabs" style="display:none"></div>
   <div id="drawer-body" class="body"></div>
@@ -165,7 +164,6 @@
 <div id="toast" class="toast"></div>
 <a class="donate-footer" href="https://paypal.me/TKECLIPSE" target="_blank" rel="noopener noreferrer"
    title="Built by TK-ECLIPSE · support on PayPal">
-  <span class="heart">❤</span>
   <span class="pp">PayPal ·</span>
   <span class="name">TK-ECLIPSE</span>
 </a>
@@ -187,7 +185,7 @@ function iconFor(def){
   if (def.gameType === 'Windrose') return ICONS.Windrose;
   if (def.gameType === 'Minecraft') return ICONS.Minecraft;
   if (def.steamAppId && ICONS[def.steamAppId]) return ICONS[def.steamAppId];
-  return '🎮';
+  return '';
 }
 
 function toast(msg, kind){
@@ -291,14 +289,14 @@ function renderCard(def, st){
         </label>
       </div>
       <div class="actions">
-        <button onclick="act('${esc(def.id)}','start')">▶ Start</button>
-        <button class="danger" onclick="act('${esc(def.id)}','stop')">■ Stop</button>
-        <button onclick="act('${esc(def.id)}','restart')">↻ Restart</button>
-        <button onclick="act('${esc(def.id)}','backup')">⏷ Backup</button>
-        <button onclick="act('${esc(def.id)}','update')">⤓ Update</button>
-        ${hasRcon ? `<button onclick="openPlayers('${esc(def.id)}')">👥 Players</button>` : ''}
-        <button onclick="openMods('${esc(def.id)}')">🧩 Mods</button>
-        <button onclick="openBackups('${esc(def.id)}')">📦 Backups</button>
+        <button onclick="act('${esc(def.id)}','start')">Start</button>
+        <button class="danger" onclick="act('${esc(def.id)}','stop')">Stop</button>
+        <button onclick="act('${esc(def.id)}','restart')">Restart</button>
+        <button onclick="act('${esc(def.id)}','backup')">Backup</button>
+        <button onclick="act('${esc(def.id)}','update')">Update</button>
+        ${hasRcon ? `<button onclick="openPlayers('${esc(def.id)}')">Players</button>` : ''}
+        <button onclick="openMods('${esc(def.id)}')">Mods</button>
+        <button onclick="openBackups('${esc(def.id)}')">Backups</button>
       </div>
     </div>`;
 }
@@ -367,7 +365,7 @@ let CREATE_STATE = { step:1, game:null, jobId:null };
 
 function openCreateServer(){
   CREATE_STATE = { step:1, game:null, jobId:null };
-  openDrawer('🚀 Create Server');
+  openDrawer('Create Server');
   drawerCtx = { kind:'create' };
   renderCreateStep();
 }
@@ -412,7 +410,7 @@ function renderCreateStep(){
     $('#drawer-footer').style.display = 'flex';
     $('#drawer-footer').innerHTML = `
       <button onclick="createBack()">← Back</button>
-      <button style="background:var(--accent);color:#fff;font-weight:700" onclick="createInstall()">⬇ Install</button>`;
+      <button style="background:var(--accent);color:#fff;font-weight:700" onclick="createInstall()">Install</button>`;
   } else {
     // Step 3: progress
     const g = CREATE_STATE.game;
@@ -529,14 +527,14 @@ function appendCreateLog(line){
 // ----- Players drawer -----
 async function openPlayers(id){
   const def = SERVERS.find(s=>s.id===id);
-  openDrawer(`👥 Players — ${def?.name||id}`);
+  openDrawer(`Players — ${def?.name||id}`);
   drawerCtx = { kind:'players', id, def };
   await reloadPlayers();
   $('#drawer-footer').style.display = 'flex';
   $('#drawer-footer').innerHTML = `
-    <button onclick="reloadPlayers()">↻ Refresh</button>
+    <button onclick="reloadPlayers()">Refresh</button>
     <input id="bcast" placeholder="broadcast message" style="flex:1;background:var(--bg0);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:7px 9px"/>
-    <button onclick="broadcast()">📢 Send</button>`;
+    <button onclick="broadcast()">Send</button>`;
 }
 async function reloadPlayers(){
   try {
@@ -551,8 +549,8 @@ async function reloadPlayers(){
           <div style="font-weight:600">${esc(p.name||'?')}</div>
           <div class="small">Steam: ${esc(p.steamId||'?')}</div>
         </div>
-        <button onclick="rcon('KickPlayer','${esc(p.steamId)}','Kicked ${esc(p.name)}')">✕ Kick</button>
-        <button class="danger" onclick="confirmBan('${esc(p.steamId)}','${esc(p.name)}')">🚫 Ban</button>
+        <button onclick="rcon('KickPlayer','${esc(p.steamId)}','Kicked ${esc(p.name)}')">Kick</button>
+        <button class="danger" onclick="confirmBan('${esc(p.steamId)}','${esc(p.name)}')">Ban</button>
       </div>`).join('');
   } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
@@ -579,12 +577,12 @@ function broadcast(){
 // ----- Mods drawer -----
 async function openMods(id){
   const def = SERVERS.find(s=>s.id===id);
-  openDrawer(`🧩 Mods — ${def?.name||id}`);
+  openDrawer(`Mods — ${def?.name||id}`);
   drawerCtx = { kind:'mods', id, def, modTab: 'installed' };
   $('#drawer-tabs').style.display = 'flex';
   $('#drawer-tabs').innerHTML = `
-    <button id="tab-installed" class="active" onclick="switchModTab('installed')">📦 Installed</button>
-    <button id="tab-browse" onclick="switchModTab('browse')">🔎 Browse</button>`;
+    <button id="tab-installed" class="active" onclick="switchModTab('installed')">Installed</button>
+    <button id="tab-browse" onclick="switchModTab('browse')">Browse</button>`;
   await loadInstalledMods();
 }
 async function switchModTab(tab){
@@ -610,14 +608,14 @@ async function loadInstalledMods(){
             <div style="font-weight:600">${esc(m.displayName)} ${m.version ? `<span class="small">v${esc(m.version)}</span>`:''}</div>
             <div class="small">${esc(m.modId)} · ${(m.sizeBytes/1024|0).toLocaleString()} KB</div>
           </div>
-          <button class="danger" onclick="uninstallMod('${esc(m.modId)}')">🗑</button>
+          <button class="danger" onclick="uninstallMod('${esc(m.modId)}')">Remove</button>
         </div>`).join('');
     }
     $('#drawer-footer').style.display = 'flex';
     $('#drawer-footer').innerHTML = `
-      <button onclick="checkModUpdates()">🔄 Check updates</button>
+      <button onclick="checkModUpdates()">Check updates</button>
       <input id="mod-url" type="text" placeholder=".zip URL" style="flex:1"/>
-      <button onclick="installModUrl()">⬇ Install</button>`;
+      <button onclick="installModUrl()">Install</button>`;
   } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 async function checkModUpdates(){
@@ -665,18 +663,18 @@ async function loadBrowseMods(q){
           <div style="font-weight:600">${esc(m.name)} <span class="small">by ${esc(m.owner)} · v${esc(m.version)}</span></div>
           <div class="desc">${esc(m.description||'')}</div>
           <div class="small" style="margin-top:4px">
-            ⬇ ${m.downloads.toLocaleString()}
+            DL: ${m.downloads.toLocaleString()}
             ${m.serverSideOnly ? '<span class="badge ok">SERVER-SIDE</span>' : '<span class="badge warn">CLIENT REQ</span>'}
             ${m.deprecated ? '<span class="badge warn">DEPRECATED</span>' : ''}
           </div>
         </div>
-        <button onclick="installFrom('${esc(m.downloadUrl)}','${esc(m.name)}')">⬇</button>
+        <button onclick="installFrom('${esc(m.downloadUrl)}','${esc(m.name)}')">Install</button>
       </div>`).join('');
     $('#drawer-body').innerHTML = list || '<div class="empty">No matches.</div>';
     $('#drawer-footer').style.display = 'flex';
     $('#drawer-footer').innerHTML = `
       <input id="mod-q" placeholder="search ${esc(r.source||'')}" style="flex:1" onkeydown="if(event.key==='Enter')loadBrowseMods(this.value)"/>
-      <button onclick="loadBrowseMods(document.getElementById('mod-q').value)">🔎</button>`;
+      <button onclick="loadBrowseMods(document.getElementById('mod-q').value)">Search</button>`;
   } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 async function installFrom(url, name){
@@ -692,13 +690,13 @@ async function installFrom(url, name){
 // ----- Backups drawer -----
 async function openBackups(id){
   const def = SERVERS.find(s=>s.id===id);
-  openDrawer(`📦 Backups — ${def?.name||id}`);
+  openDrawer(`Backups — ${def?.name||id}`);
   drawerCtx = { kind:'backups', id, def };
   await reloadBackups();
   $('#drawer-footer').style.display = 'flex';
   $('#drawer-footer').innerHTML = `
-    <button onclick="reloadBackups()">↻ Refresh</button>
-    <button onclick="newBackup()">⏷ Backup now</button>`;
+    <button onclick="reloadBackups()">Refresh</button>
+    <button onclick="newBackup()">Backup now</button>`;
 }
 async function reloadBackups(){
   try {
@@ -713,8 +711,8 @@ async function reloadBackups(){
           <div style="font-weight:600">${esc(b.checkpointName)}</div>
           <div class="small">${new Date(b.createdAt).toLocaleString()} · ${(b.sizeBytes||0)>(1<<20) ? ((b.sizeBytes/(1<<20))|0)+' MB' : ((b.sizeBytes/(1<<10))|0)+' KB'}</div>
         </div>
-        <button onclick="restoreBackup('${esc(b.checkpointName)}')">↶ Restore</button>
-        <button class="danger" onclick="deleteBackup('${esc(b.checkpointName)}')">🗑</button>
+        <button onclick="restoreBackup('${esc(b.checkpointName)}')">Restore</button>
+        <button class="danger" onclick="deleteBackup('${esc(b.checkpointName)}')">Delete</button>
       </div>`).join('');
   } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }

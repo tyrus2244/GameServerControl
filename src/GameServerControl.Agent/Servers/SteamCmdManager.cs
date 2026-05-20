@@ -7,14 +7,8 @@ using System.Text.RegularExpressions;
 namespace GameServerControl.Agent.Servers;
 
 /// <summary>
-/// Ensures the Valve <c>steamcmd</c> binary is present and runs it for the agent.
-///
-/// Where it looks (in priority order):
-///   1. <c>Agent:SteamCmdPath</c> in appsettings.json — explicit override.
-///   2. <c>steamcmd[.exe]</c> on PATH — for users who installed it themselves.
-///   3. <c>&lt;agent dir&gt;/SteamCMD/steamcmd[.exe]</c> — our private cached copy.
-///
-/// If none of those exist, downloads the official Valve archive into our private cache.
+/// Resolves steamcmd in order: Agent:SteamCmdPath config, PATH, private cache under the
+/// agent dir. Downloads the official Valve archive if none of those exist.
 /// </summary>
 public sealed class SteamCmdManager
 {
@@ -31,8 +25,6 @@ public sealed class SteamCmdManager
 
     private string ExeName => OperatingSystem.IsWindows() ? "steamcmd.exe" : "steamcmd.sh";
 
-    // Valve's official distribution URLs. These have been stable for years; if Valve ever moves
-    // them, surface a clear error rather than silently failing somewhere downstream.
     private string DistributionUrl => OperatingSystem.IsWindows()
         ? "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip"
         : "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz";
@@ -121,10 +113,7 @@ public sealed class SteamCmdManager
         await p.WaitForExitAsync(ct);
     }
 
-    /// <summary>
-    /// Run <c>steamcmd +login anonymous +force_install_dir … +app_update … validate +quit</c> and
-    /// stream every line of stdout/stderr through <paramref name="onLine"/>. Returns success/exit code.
-    /// </summary>
+    /// <summary>Runs <c>+app_update {appId} validate</c> and streams stdout/stderr through <paramref name="onLine"/>.</summary>
     public async Task<(bool Ok, int ExitCode)> RunAppUpdateAsync(
         string installDir,
         string appId,

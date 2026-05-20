@@ -42,9 +42,8 @@ skip()  { echo -e "    ${GRAY}-- $*${NC}"; }
 warn()  { echo -e "    ${YELLOW}!! $*${NC}"; }
 fail()  { echo -e "\n${RED}ERROR:${NC} $*\n"; exit 1; }
 
-echo -e "${RED}=================================================================${NC}"
-echo -e "${RED}  TK-ECLIPSE  ·  GameServerControl  ·  macOS installer           ${NC}"
-echo -e "${RED}=================================================================${NC}"
+echo "GameServerControl installer (macOS)"
+echo "-----------------------------------"
 
 # ---- Platform detection ----
 # uname -m returns arm64 on Apple Silicon, x86_64 on Intel. The release pipeline produces
@@ -192,15 +191,12 @@ else
 fi
 
 echo ""
-echo -e "${RED}=================================================================${NC}"
-echo -e "${GREEN}  Done!  ($tag)${NC}"
+echo "Installed $tag."
 echo ""
-echo -e "${GRAY}  Status:    launchctl list | grep gameservercontrol${NC}"
-echo -e "${GRAY}  Logs:      tail -f $LOG_DIR/agent.out.log${NC}"
-echo -e "${GRAY}  Errors:    tail -f $LOG_DIR/agent.err.log${NC}"
-echo -e "${GRAY}  Web UI:    http://<this-mac>:5099/${NC}"
-echo -e "${GRAY}  Config:    $INSTALL_DIR/appsettings.json${NC}"
-echo -e "${GRAY}  Unload:    launchctl unload $PLIST_DST${NC}"
+echo "  Status:  launchctl list | grep gameservercontrol"
+echo "  Logs:    tail -f $LOG_DIR/agent.out.log"
+echo "  Errors:  tail -f $LOG_DIR/agent.err.log"
+echo "  Web UI:  http://<this-mac>:5099/"
+echo "  Config:  $INSTALL_DIR/appsettings.json"
+echo "  Unload:  launchctl unload $PLIST_DST"
 echo ""
-echo -e "${RED}  ❤ Support: https://paypal.me/TKECLIPSE${NC}"
-echo -e "${RED}=================================================================${NC}"

@@ -7,15 +7,9 @@ using GameServerControl.Shared;
 namespace GameServerControl.Agent.Notifications;
 
 /// <summary>
-/// Background service that polls the GitHub Releases API once per day and caches the latest
-/// available version. The dashboard surfaces a "v1.0.1 available" banner when the cached
-/// latest is newer than the running assembly's InformationalVersion.
-///
-/// Why GitHub Releases and not a self-hosted feed:
-///   - Free, public, rate-limited at 60 anon requests/hour (we use 1/day, comfortably under).
-///   - Authors release artifacts there anyway; no extra infra.
-///   - The /releases/latest endpoint already implements "latest non-draft, non-prerelease"
-///     semantics, so we don't have to.
+/// Polls the GitHub Releases API once a day and exposes the latest known version. The
+/// dashboards check /api/version on connect and show an "update available" banner if
+/// the cached latest is newer than the running InformationalVersion.
 /// </summary>
 public sealed class UpdateChecker : IHostedService, IDisposable
 {
@@ -108,15 +102,10 @@ public sealed class UpdateChecker : IHostedService, IDisposable
         }
     }
 
-    /// <summary>Strip leading "v" from a tag so the comparator only sees digits.</summary>
     private static string NormalizeTag(string tag) =>
         tag.StartsWith("v", StringComparison.OrdinalIgnoreCase) ? tag.Substring(1) : tag;
 
-    /// <summary>
-    /// Lexicographic-by-numeric-segment comparison. Treats "1.0.1" &gt; "1.0.0". Falls back
-    /// to string compare if either side isn't pure dotted-numeric (e.g. "1.0.0-rc1"). Good
-    /// enough for our semver-clean tags; we don't need full SemVer 2.0 precedence here.
-    /// </summary>
+    // Numeric-segment compare. Falls back to ordinal string compare for prerelease tags.
     private static int CompareVersions(string a, string b)
     {
         var aParts = a.Split('.');

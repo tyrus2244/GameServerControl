@@ -6,15 +6,9 @@ using Microsoft.AspNetCore.SignalR;
 namespace GameServerControl.Agent.Servers;
 
 /// <summary>
-/// Orchestrates the "create a brand new dedicated server from scratch" flow:
-///   1. Run SteamCMD with the requested app ID against the chosen install directory.
-///   2. On success, register the supplied ServerDef in the ServerRegistry (persists to servers.json).
-///   3. Stream live progress lines + a coarse percent hint over SignalR so the UI can show a real
-///      progress view instead of a spinner.
-///
-/// Jobs are tracked in memory; if the agent restarts mid-install, the in-flight job is lost and
-/// the user re-runs the wizard. Survival across restarts isn't worth the complexity here — installs
-/// are minutes-long, not hours.
+/// Runs SteamCMD against a given install path, then registers the supplied ServerDef on success.
+/// Progress is streamed over SignalR ("installProgress" event); jobs are in-memory only so a
+/// restart mid-install loses the in-flight job.
 /// </summary>
 public sealed class ServerInstaller
 {
@@ -37,11 +31,7 @@ public sealed class ServerInstaller
 
     public InstallProgress? Get(string jobId) => _jobs.TryGetValue(jobId, out var p) ? p : null;
 
-    /// <summary>
-    /// Kick off an install asynchronously. Returns immediately with a job ID; progress streams
-    /// via SignalR ("installProgress" event). Caller is responsible for validating the request
-    /// at the API layer (preset exists, install path is writable, etc.).
-    /// </summary>
+    /// <summary>Kicks off an install async; returns a job ID. Caller validates the request.</summary>
     public string StartJob(InstallServerRequest req)
     {
         var jobId = Guid.NewGuid().ToString("N")[..12];
@@ -63,9 +53,7 @@ public sealed class ServerInstaller
                 req.SteamAppId,
                 (line, pct) =>
                 {
-                    // Fire-and-forget broadcast — if SignalR is jammed we'd rather drop a frame
-                    // than slow down SteamCMD parsing. The job's terminal state always wins
-                    // because we set it after WaitForExitAsync.
+                    // Fire-and-forget — slow SignalR shouldn't block steamcmd parsing.
                     _ = BroadcastAsync(new InstallProgress(jobId, "steamcmd", line, pct, false, false));
                 },
                 ct);

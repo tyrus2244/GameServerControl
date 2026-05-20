@@ -136,32 +136,9 @@ public sealed partial class ServerViewModel : ObservableObject
     [ObservableProperty] private long? memoryMB;
     [ObservableProperty] private string? inviteCode;
 
-    public string GameIcon
-    {
-        get
-        {
-            if (Def.GameType == GameServerControl.Shared.GameType.Windrose) return "⛵";
-            if (Def.GameType == GameServerControl.Shared.GameType.Minecraft) return "⛏";
-            if (Def.GameType == GameServerControl.Shared.GameType.SteamGeneric)
-            {
-                return Def.SteamAppId switch
-                {
-                    "896660" => "⚔",      // Valheim
-                    "2394010" => "🐾",    // Palworld
-                    "1690800" => "⚙",    // Satisfactory
-                    "2430930" => "🦖",    // ARK ASA
-                    "376030"  => "🦖",    // ARK SE
-                    "258550" => "🔧",     // Rust
-                    "294420" => "🧟",     // 7 Days to Die
-                    "105600" => "🌳",     // Terraria
-                    "343050" => "❄",     // Don't Starve Together
-                    "380870" => "🧟",     // Project Zomboid
-                    _ => "🎮"
-                };
-            }
-            return "🎮";
-        }
-    }
+    // Legacy property — kept so any leftover binding doesn't error. Returns empty string;
+    // the dashboard card no longer renders a per-game icon column.
+    public string GameIcon => "";
 
     public bool HasInviteCode => !string.IsNullOrEmpty(InviteCode);
     public bool HasCpuRam => CpuPercent is not null || MemoryMB is not null;

@@ -3,11 +3,7 @@ using GameServerControl.Shared;
 namespace GameServerControl.Agent.Auth;
 
 /// <summary>
-/// Pragmatic role enforcement: any state-mutating HTTP verb (POST/PUT/DELETE/PATCH) requires
-/// the Admin role. GETs are allowed for any authenticated token.
-///
-/// This is preferable to retrofitting <c>.RequireAuthorization("admin")</c> on every endpoint —
-/// it's one rule, easy to audit, and impossible to forget on a new endpoint.
+/// Rejects POST/PUT/DELETE/PATCH from ReadOnly tokens with 403. GETs work for any role.
 /// </summary>
 public sealed class RoleEnforcementMiddleware
 {

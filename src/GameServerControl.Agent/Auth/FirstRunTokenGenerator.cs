@@ -4,16 +4,8 @@ using System.Text.RegularExpressions;
 namespace GameServerControl.Agent.Auth;
 
 /// <summary>
-/// Ensures the agent never ships with a hardcoded API token.
-///
-/// On startup, if <c>Agent:ApiToken</c> is empty, a known placeholder, or shorter
-/// than a sensible threshold, we generate a cryptographically random 32-byte
-/// token, write it back to <c>appsettings.json</c>, and log it to console once.
-///
-/// This means a fresh clone of the repo can't be hit by anyone with knowledge of
-/// the source — they'd need the actual deployed appsettings file. Operators get
-/// a one-time chance to see and copy the token from the agent's console output
-/// or from the file directly.
+/// On first startup, if Agent:ApiToken is empty or a known placeholder, generates a
+/// random 32-byte token, writes it back to appsettings.json, and prints it once.
 /// </summary>
 public static class FirstRunTokenGenerator
 {

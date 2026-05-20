@@ -1,12 +1,5 @@
 # Renders the GameServerControl logo via GDI+ (System.Drawing).
-# Output: logo.ico (multi-size) + logo.png (512px preview), in the path passed as -OutDir.
-#
-# Design — black + red, original geometric mark. Composition:
-#   - Rounded-square background, near-black with a subtle vertical red->black gradient
-#   - Thin red bevel ring around the outer edge
-#   - Central red angular "play" triangle (gaming) sitting on three stacked red bars
-#     (server rack) — together = "Game Server Control"
-#   - Sized to read clearly at 16x16 (the taskbar/shortcut overlay size)
+# Output: logo.ico (multi-size) + logo.png (512px preview).
 
 param(
     [string]$OutDir = 'C:\GameServerControl\Client'

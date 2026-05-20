@@ -8,10 +8,8 @@ using GameServerControl.Shared;
 namespace GameServerControl.Client.Views;
 
 /// <summary>
-/// Focused player-management window — mirrors the responsive web UI's Players drawer.
-/// The full RCON console (raw command input, shutdown countdown, save-world) still lives in
-/// RconWindow for power users; this window is the daily-driver UX: list, kick, ban, broadcast.
-/// Auto-refreshes every 10s while the window is open.
+/// Player list with kick/ban/broadcast. Auto-refreshes every 10s while open. The full
+/// RCON console (raw command input, shutdown countdown, save-world) lives in RconWindow.
 /// </summary>
 public partial class PlayersWindow : Window
 {
@@ -26,7 +24,7 @@ public partial class PlayersWindow : Window
         DarkTitleBar.Apply(this);
         _client = client;
         _server = server;
-        HeaderText.Text = $"👥 Players — {server.Name}";
+        HeaderText.Text = $"Players — {server.Name}";
         PlayersList.ItemsSource = _players;
 
         // Poll once on open + every 10s thereafter while AutoBox is checked. Stop on close so a

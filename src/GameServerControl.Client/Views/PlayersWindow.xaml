@@ -20,14 +20,14 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock x:Name="HeaderText" Text="👥 Players" FontSize="20" FontWeight="Bold"/>
-            <TextBlock Text="Live player list via RCON. Auto-refreshes every 10s while open. Kick / ban / broadcast in two clicks."
+            <TextBlock x:Name="HeaderText" Text="Players" FontSize="20" FontWeight="Bold"/>
+            <TextBlock Text="Live player list via RCON. Auto-refreshes every 10 seconds while open."
                        Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
         </StackPanel>
 
         <!-- Toolbar -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
-            <Button x:Name="RefreshBtn" Content="↻ Refresh" Style="{StaticResource ActionButton}" Click="Refresh_Click"/>
+            <Button x:Name="RefreshBtn" Content="Refresh" Style="{StaticResource ActionButton}" Click="Refresh_Click"/>
             <CheckBox x:Name="AutoBox" Content="Auto-refresh" IsChecked="True" VerticalAlignment="Center"
                       Margin="14,0,0,0" Foreground="{StaticResource TextBrush}"
                       ToolTip="Refresh every 10s while the window is open"/>
@@ -57,8 +57,8 @@
                                         </TextBlock>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Content="✕ Kick" Style="{StaticResource ActionButton}" Tag="{Binding SteamId}" Click="Kick_Click"/>
-                                        <Button Content="🚫 Ban" Style="{StaticResource DangerButton}" Tag="{Binding SteamId}" Click="Ban_Click"/>
+                                        <Button Content="Kick" Style="{StaticResource ActionButton}" Tag="{Binding SteamId}" Click="Kick_Click"/>
+                                        <Button Content="Ban" Style="{StaticResource DangerButton}" Tag="{Binding SteamId}" Click="Ban_Click"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -81,7 +81,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="📢 Broadcast" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="0" Text="Broadcast" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBox  Grid.Column="1" x:Name="BroadcastBox" Padding="6,4"
                           ToolTip="Sent to every connected player"/>
                 <Button   Grid.Column="2" Content="Send" Style="{StaticResource ActionButton}"

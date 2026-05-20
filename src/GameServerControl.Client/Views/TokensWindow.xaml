@@ -70,7 +70,7 @@
                         <GridViewColumn Header="" Width="80">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="🗑 Revoke" Style="{StaticResource DangerButton}"
+                                    <Button Content="Revoke" Style="{StaticResource DangerButton}"
                                             Tag="{Binding Id}" Click="Revoke_Click"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>

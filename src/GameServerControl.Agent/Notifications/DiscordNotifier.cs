@@ -6,13 +6,8 @@ using GameServerControl.Shared;
 namespace GameServerControl.Agent.Notifications;
 
 /// <summary>
-/// Posts game-server lifecycle events to a Discord channel webhook URL stored per-server.
-///
-/// Webhook URL format: https://discord.com/api/webhooks/&lt;id&gt;/&lt;token&gt;
-/// Discord accepts a JSON body with `username`, `content`, and an `embeds` array; we send a
-/// single embed per event so the message is colored (green=up, red=down, yellow=warn, blue=info).
-///
-/// Failures are swallowed — Discord being down should never block a server start.
+/// Posts lifecycle events to a per-server Discord webhook URL. One colored embed per event.
+/// Failures are swallowed so Discord being down can't block a server start.
 /// </summary>
 public sealed class DiscordNotifier
 {

@@ -45,16 +45,16 @@ public partial class CreateServerWindow : Window
 
         // Curated list of "we know SteamCMD can install this anonymously" games. Keep order roughly
         // by popularity. Sizes are typical — actual download depends on game updates.
-        _games.Add(new("valheim",      "Valheim",                 "⚔",  "896660",  "~1 GB",   "Valheim",      GamePresets.FindByKey("valheim")!));
-        _games.Add(new("palworld",     "Palworld",                "🐾", "2394010", "~7 GB",   "PalServer",    GamePresets.FindByKey("palworld")!));
-        _games.Add(new("satisfactory", "Satisfactory",            "⚙",  "1690800", "~12 GB",  "Satisfactory", GamePresets.FindByKey("satisfactory")!));
-        _games.Add(new("ark-asa",      "ARK: Survival Ascended",  "🦖", "2430930", "~50 GB",  "ArkAscended",  GamePresets.FindByKey("ark-asa")!));
-        _games.Add(new("ark-se",       "ARK: Survival Evolved",   "🦖", "376030",  "~14 GB",  "ArkSE",        GamePresets.FindByKey("ark-se")!));
-        _games.Add(new("rust",         "Rust",                    "🔧", "258550",  "~8 GB",   "Rust",         GamePresets.FindByKey("rust")!));
-        _games.Add(new("7dtd",         "7 Days to Die",           "🧟", "294420",  "~2 GB",   "SevenDaysToDie", GamePresets.FindByKey("7dtd")!));
-        _games.Add(new("terraria",     "Terraria",                "🌳", "105600",  "~0.5 GB", "Terraria",     GamePresets.FindByKey("terraria")!));
-        _games.Add(new("dst",          "Don't Starve Together",   "❄",  "343050",  "~1 GB",   "DST",          GamePresets.FindByKey("dst")!));
-        _games.Add(new("zomboid",      "Project Zomboid",         "🧟", "380870",  "~1 GB",   "ProjectZomboid", GamePresets.FindByKey("zomboid")!));
+        _games.Add(new("valheim",      "Valheim",                 "",  "896660",  "~1 GB",   "Valheim",      GamePresets.FindByKey("valheim")!));
+        _games.Add(new("palworld",     "Palworld",                "", "2394010", "~7 GB",   "PalServer",    GamePresets.FindByKey("palworld")!));
+        _games.Add(new("satisfactory", "Satisfactory",            "",  "1690800", "~12 GB",  "Satisfactory", GamePresets.FindByKey("satisfactory")!));
+        _games.Add(new("ark-asa",      "ARK: Survival Ascended",  "", "2430930", "~50 GB",  "ArkAscended",  GamePresets.FindByKey("ark-asa")!));
+        _games.Add(new("ark-se",       "ARK: Survival Evolved",   "", "376030",  "~14 GB",  "ArkSE",        GamePresets.FindByKey("ark-se")!));
+        _games.Add(new("rust",         "Rust",                    "", "258550",  "~8 GB",   "Rust",         GamePresets.FindByKey("rust")!));
+        _games.Add(new("7dtd",         "7 Days to Die",           "", "294420",  "~2 GB",   "SevenDaysToDie", GamePresets.FindByKey("7dtd")!));
+        _games.Add(new("terraria",     "Terraria",                "", "105600",  "~0.5 GB", "Terraria",     GamePresets.FindByKey("terraria")!));
+        _games.Add(new("dst",          "Don't Starve Together",   "",  "343050",  "~1 GB",   "DST",          GamePresets.FindByKey("dst")!));
+        _games.Add(new("zomboid",      "Project Zomboid",         "", "380870",  "~1 GB",   "ProjectZomboid", GamePresets.FindByKey("zomboid")!));
         GameList.ItemsSource = _games;
 
         // Default install root — C:\GameServers on Windows, ~/gameservers on Linux/macOS.
@@ -76,7 +76,7 @@ public partial class CreateServerWindow : Window
         DisplayNameBox.Text = _selected.Label;
         IdBox.Text          = SlugifyName(_selected.Label);
         InstallPathBox.Text = DefaultInstallRoot() + Path.DirectorySeparatorChar + _selected.DefaultDirName;
-        Step2GameHeader.Text = $"{_selected.Icon}  {_selected.Label}  ·  Steam App ID {_selected.SteamAppId}";
+        Step2GameHeader.Text = $"{_selected.Label}  ·  Steam App ID {_selected.SteamAppId}";
         UpdatePreview();
 
         // Wire change tracking now that the boxes are populated.
@@ -199,8 +199,8 @@ public partial class CreateServerWindow : Window
                 "queued"   => "Queued…",
                 "steamcmd" => p.PercentHint is int v ? $"SteamCMD · {v}%" : "SteamCMD running…",
                 "register" => "Registering with dashboard…",
-                "done"     => "✅ Done — server is ready.",
-                "failed"   => "❌ Failed — see log above.",
+                "done"     => "Done. Server is ready.",
+                "failed"   => "Failed. See log above.",
                 _          => p.Phase
             };
             if (p.Finished)
@@ -209,13 +209,13 @@ public partial class CreateServerWindow : Window
                 if (p.Success)
                 {
                     InstallProgressBar.Value = 100;
-                    Step3Header.Text = $"✅ {_selected?.Label} installed.";
+                    Step3Header.Text = $"{_selected?.Label} installed.";
                     DoneBtn.Visibility = Visibility.Visible;
                     _onCreated?.Invoke();
                 }
                 else
                 {
-                    Step3Header.Text = $"❌ Install failed.";
+                    Step3Header.Text = "Install failed.";
                     BackBtn.Visibility = Visibility.Visible;
                 }
             }

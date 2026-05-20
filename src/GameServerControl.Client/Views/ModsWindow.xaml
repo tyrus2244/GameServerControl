@@ -32,7 +32,7 @@
             <!-- =========================================================== -->
             <!-- Browse tab: search Thunderstore                              -->
             <!-- =========================================================== -->
-            <TabItem Header="🔍 Browse">
+            <TabItem Header="Browse">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -103,7 +103,7 @@
                                                         </StackPanel>
                                                         <TextBlock Text="{Binding DescriptionShort}" FontSize="12" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="36"/>
                                                         <TextBlock FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0">
-                                                            <Run Text="⬇"/><Run Text="{Binding DownloadsLabel, Mode=OneWay}"/>
+                                                            <Run Text="Downloads:"/><Run Text="{Binding DownloadsLabel, Mode=OneWay}"/>
                                                             <Run Text=" · ⭐"/><Run Text="{Binding RatingScore, Mode=OneWay}"/>
                                                             <Run Text=" · "/><Run Text="{Binding CategoriesLabel, Mode=OneWay}"/>
                                                         </TextBlock>
@@ -132,7 +132,7 @@
             <!-- =========================================================== -->
             <!-- Installed tab: list + uninstall + URL paste                   -->
             <!-- =========================================================== -->
-            <TabItem Header="📦 Installed">
+            <TabItem Header="Installed">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -141,8 +141,8 @@
                     </Grid.RowDefinitions>
                     <!-- Update toolbar -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button Content="🔄 Check for updates" Style="{StaticResource ActionButton}" Click="CheckUpdates_Click"/>
-                        <Button Content="⬆ Update all" Style="{StaticResource ActionButton}" Click="UpdateAll_Click" Margin="6,0,0,0"
+                        <Button Content="Check for updates" Style="{StaticResource ActionButton}" Click="CheckUpdates_Click"/>
+                        <Button Content="Update all" Style="{StaticResource ActionButton}" Click="UpdateAll_Click" Margin="6,0,0,0"
                                 x:Name="UpdateAllBtn" IsEnabled="False"/>
                         <TextBlock x:Name="UpdatesSummary" VerticalAlignment="Center" Margin="14,0,0,0" Foreground="{StaticResource TextDimBrush}"/>
                     </StackPanel>

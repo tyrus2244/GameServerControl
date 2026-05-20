@@ -39,7 +39,7 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Text="Players" FontWeight="SemiBold" Foreground="{StaticResource InfoBrush}" Margin="0,0,0,8"/>
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Content="↻ Refresh" Style="{StaticResource ActionButton}"
+                    <Button Content="Refresh" Style="{StaticResource ActionButton}"
                             Command="{Binding RefreshPlayersCommand}"/>
                     <CheckBox Content="Auto" IsChecked="{Binding AutoRefresh}" VerticalAlignment="Center"
                               Margin="10,0,0,0" ToolTip="Refresh every 10s"/>
@@ -57,8 +57,8 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,8,0,0">
-                    <Button Content="✕ Kick" Style="{StaticResource DangerButton}" Command="{Binding KickSelectedCommand}"/>
-                    <Button Content="🚫 Ban" Style="{StaticResource DangerButton}" Command="{Binding BanSelectedCommand}"/>
+                    <Button Content="Kick" Style="{StaticResource DangerButton}" Command="{Binding KickSelectedCommand}"/>
+                    <Button Content="Ban" Style="{StaticResource DangerButton}" Command="{Binding BanSelectedCommand}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -83,7 +83,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Broadcast" VerticalAlignment="Center"/>
                         <TextBox  Grid.Column="1" Text="{Binding BroadcastText, UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button   Grid.Column="2" Content="📢 Send" Style="{StaticResource ActionButton}"
+                        <Button   Grid.Column="2" Content="Send" Style="{StaticResource ActionButton}"
                                   Command="{Binding BroadcastCommand}" Margin="8,0,0,0"/>
                     </Grid>
 
@@ -97,12 +97,12 @@
                         <TextBlock Grid.Column="0" Text="Shutdown in (s)" VerticalAlignment="Center"/>
                         <TextBox  Grid.Column="1" Text="{Binding ShutdownSeconds, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
                         <TextBox  Grid.Column="2" Text="{Binding ShutdownMessage, UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button   Grid.Column="3" Content="⚠ Shutdown" Style="{StaticResource DangerButton}"
+                        <Button   Grid.Column="3" Content="Shutdown" Style="{StaticResource DangerButton}"
                                   Command="{Binding ShutdownCommand}" Margin="8,0,0,0"/>
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <Button Content="💾 Save World" Style="{StaticResource ActionButton}" Command="{Binding SaveWorldCommand}"/>
+                        <Button Content="Save World" Style="{StaticResource ActionButton}" Command="{Binding SaveWorldCommand}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -137,7 +137,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0" Text="{Binding CommandText, UpdateSourceTrigger=PropertyChanged}"
                                  FontFamily="Consolas, Cascadia Mono" Padding="6,4"/>
-                        <Button Grid.Column="1" Content="▶ Run" Style="{StaticResource ActionButton}"
+                        <Button Grid.Column="1" Content="Run" Style="{StaticResource ActionButton}"
                                 Command="{Binding SendRawCommand}" Margin="8,0,0,0" IsDefault="True"/>
                     </Grid>
                 </Grid>

@@ -1,363 +1,181 @@
-# Promotion playbook — TK-ECLIPSE / GameServerControl
+# Promotion drafts
 
-Copy-paste these wherever you want to land them. Each draft is ready to go — screenshots
-are the only thing missing, see [SCREENSHOTS.md](SCREENSHOTS.md) for the capture list.
-
-**Recommended posting order** (highest signal → lowest, so feedback shapes the next post):
-
-1. r/selfhosted on Reddit
-2. Show HN on Hacker News
-3. r/homelab on Reddit
-4. Per-game subreddits (Valheim / Satisfactory / Palworld / ARK)
-5. Awesome-selfhosted PR
-
-Don't post all in the same hour — space them out over a week so each gets its own attention.
+Plain copy/paste for the places I want to post the project. Personal notes only - not part of the shipped product.
 
 ---
 
-## 1) Show HN (Hacker News)
+## Show HN
 
-**Where:** https://news.ycombinator.com/submit
+URL field: `https://github.com/tyrus2244/GameServerControl`
 
-**Best time:** Tue/Wed 7–10am Pacific Time. Avoid Friday.
-
-**Title** (80 char max, current is 78):
+Title (under 80 chars):
 
 ```
-Show HN: GameServerControl – self-hosted dashboard for Steam dedicated servers
+Show HN: GameServerControl, a self-hosted dashboard for Steam dedicated servers
 ```
 
-**URL field:** `https://github.com/tyrus2244/GameServerControl`
-
-**Text field** (paste below, HN renders limited markdown):
+Body:
 
 ```
-I built GameServerControl — a self-hosted dashboard for managing Steam dedicated
-game servers (Valheim, Satisfactory, Palworld, ARK, Rust, 7DTD, Terraria, etc.)
-from a single pane of glass.
+I got tired of SSH'ing into my box every time I wanted to spin up a new Valheim or Satisfactory server, fight with steamcmd, hand-write a systemd unit, then come back later to find it had crashed two hours ago. So I built a control panel.
 
-The thing I always wanted: instead of SSH-ing into a box, running steamcmd
-manually, hand-rolling systemd units, and fumbling with RCON via netcat, I click
-"Create Server", pick a game, and it installs, configures, registers, and starts
-the server. SteamCMD gets auto-downloaded if it's missing.
+GameServerControl runs as a service on the host machine and exposes a browser UI plus a native Windows desktop client. Pick a game from a list, click install. The agent runs steamcmd in the background and registers the new server. Same UI handles backups, mods, RCON, scheduled restarts, crash detection with Discord webhooks, and live CPU/RAM charts.
 
-What it does:
-• 🚀 One-click Create Server (10 games preset, anonymous SteamCMD install)
-• 🧩 Server-side mod management — Thunderstore (Valheim), ficsit.app (Satisfactory),
-   curated GitHub Releases (Palworld), Steam Workshop (ARK). Auto-update + dep resolution.
-• 📦 Backups + restore (zip-based or Hyper-V checkpoint, scheduled cadence)
-• 👥 Live RCON player management (kick/ban/broadcast, auto-refresh)
-• 📊 Live CPU/RAM charts per server, 5-min rolling history
-• 🔔 Discord webhook alerts on crash detection (Running → NotRunning without a stop)
-• 🛰 Multi-host federation (one dashboard, N agents on N machines)
-• 🔑 Per-user tokens with Admin/ReadOnly roles
-• ⏰ Scheduled maintenance (daily restart / weekly steamcmd update / hourly backup)
+Currently supports: Valheim, Satisfactory, Palworld, ARK ASA, ARK SE, Rust, 7DTD, Terraria, Don't Starve Together, Project Zomboid, Minecraft. Mod browsers wired to Thunderstore (Valheim), ficsit.app (Satisfactory), Steam Workshop (ARK), and curated GitHub Releases lists (Palworld).
 
-Stack: .NET 8 — ASP.NET Core agent (Windows service, Linux systemd, macOS LaunchAgent)
-+ WPF dashboard (Windows) + browser web UI (works on any device). MIT license.
-Self-signed HTTPS by default. Tailscale-friendly — designed to bind to a tailnet IP.
+Agent runs on Windows, Linux, and macOS. Native client is Windows-only; everyone else uses the browser UI. .NET 8. MIT. Designed to bind to a Tailscale IP so it stays off the public internet by default.
 
-One-line install:
+One-line install per platform:
+
   Windows:  iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
   Linux:    curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/linux/install-from-release.sh | sudo bash
   macOS:    curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/macos/install-from-release.sh | bash
 
-Each script auto-installs the .NET runtime if missing, preserves config on upgrade,
-and registers the right service flavor (Windows service / systemd / LaunchAgent).
+Each script handles the .NET runtime, downloads the latest release asset, registers the right service flavor, and preserves config across upgrades. Re-running the same command upgrades.
 
-Feedback I'd love:
-• What games should be next in the Create Server preset list?
-• Anyone else wishing for a "headless mini-PC running game servers" experience
-  that's not a $5/mo SaaS box?
-• Sanity-check the architecture: agent broadcasts via SignalR, client is reactive WPF,
-  web UI is plain HTML+JS (no framework). Anything dumb?
+Looking for feedback on the create-server UX and which games should be added next. Repo has screenshots.
 
-Repo: https://github.com/tyrus2244/GameServerControl
+https://github.com/tyrus2244/GameServerControl
 ```
 
 ---
 
-## 2) r/selfhosted
+## r/selfhosted
 
-**Where:** https://reddit.com/r/selfhosted/submit
-
-**Title:**
+Title:
 
 ```
-GameServerControl – self-hosted dashboard for Steam dedicated game servers (Valheim, Satisfactory, Palworld, ARK, Rust, …) with one-click install
+GameServerControl: self-hosted dashboard for Steam dedicated servers (Valheim, Satisfactory, Palworld, ARK, Rust, ...)
 ```
 
-**Tag:** Software → Software Development or Self Promotion (the sub enforces a flair).
-
-**Body:**
+Body:
 
 ```
-I got tired of SSH-ing into my mini-PC every time I wanted to spin up a new game
-server, restart Valheim after it crashed, or check who was online. So I built
-**GameServerControl** — a self-hosted dashboard that runs as a service on the
-host machine and exposes a slick browser UI (and a native Windows client).
+Tired of SSH and steamcmd, built a control panel.
 
-[Screenshot: dashboard overview]
+One agent runs as a service on your host machine. Browser UI plus a native Windows desktop client. Click Create Server, pick a game, choose where it installs. The agent runs steamcmd and registers the server. From there it handles backups, mod browsers, RCON player management, scheduled restarts, crash detection and Discord alerts, multi-host federation, per-user tokens with roles.
 
-**The marquee feature:** click "🚀 Create Server", pick a game, choose where to
-install it. The agent auto-downloads SteamCMD if missing, runs `+app_update`
-with live progress, registers the server. From zero to "running Valheim/ARK/
-Palworld" in one workflow.
+10 game presets with anonymous SteamCMD installs (Valheim, Satisfactory, Palworld, ARK ASA + SE, Rust, 7DTD, Terraria, Don't Starve Together, Project Zomboid). Plus Minecraft Java and Windrose without SteamCMD.
 
-[Screenshot: create wizard]
+Mod browsers built in: Thunderstore for Valheim, ficsit.app for Satisfactory, Steam Workshop for ARK, curated GitHub Releases for Palworld. Filters to server-side mods by default so your players don't need to install anything.
 
-**What's in the box**
+.NET 8, MIT, agent runs on Windows + Linux + macOS. Tailscale-friendly by design.
 
-* 🚀 One-click Create Server — 10 games preset (Valheim, Palworld, Satisfactory,
-  ARK ASA+SE, Rust, 7DTD, Terraria, Don't Starve Together, Project Zomboid)
-* 🧩 Server-side mod management — Thunderstore + ficsit.app + Steam Workshop +
-  GitHub Releases. Filters to server-side-only by default (your buddies don't
-  need to install anything client-side). Auto-update + dep resolution.
-* 📦 Backups + restore (zip-based, Hyper-V checkpoints if you have a VM,
-  scheduled cadence with retention)
-* 👥 Live player management via RCON — kick / ban / broadcast / shutdown
-* 📊 Live CPU/RAM charts per server, 5-minute rolling history
-* 🔔 Discord webhook alerts (start / stop / crash auto-detect / backup done)
-* 🛰 Multi-host federation — control N agents from one dashboard
-* 🔑 Per-user tokens with Admin / ReadOnly roles
-* ⏰ Scheduled maintenance (daily restart, weekly update, hourly backup)
+Install in one line:
 
-**Stack**
+    iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
 
-.NET 8, MIT license. Agent runs on Windows / Linux / macOS (Apple Silicon + Intel).
-Web UI works in any modern browser. Native Windows dashboard for the desktop UX.
-HTTPS with self-signed cert. Tailscale-friendly — bind to a tailnet IP and you're
-private by default.
+(curl one-liner for Linux/macOS in the README.)
 
-**Install — one line per OS**
+Screenshots and full docs: https://github.com/tyrus2244/GameServerControl
 
-Windows (PowerShell, Admin):
-```
-iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
-```
-
-Linux (systemd):
-```
-curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/linux/install-from-release.sh | sudo bash
-```
-
-macOS (LaunchAgent, no sudo needed):
-```
-curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/macos/install-from-release.sh | bash
-```
-
-Re-run the same command to update. User data (servers, tokens, configs) is
-preserved across upgrades.
-
-**Repo:** github.com/tyrus2244/GameServerControl
-
-Built by [TK-ECLIPSE](https://paypal.me/TKECLIPSE). Open to ideas for what to
-build next — what games would you want preset? What integrations are missing?
+Happy to answer questions. Particularly want to know what games to add next.
 ```
 
 ---
 
-## 3) r/homelab
+## r/homelab
 
-Same body as r/selfhosted but with the title tweaked:
+Same body as r/selfhosted, different title:
 
 ```
-[Project] One-click self-hosted control panel for game servers in your homelab (Valheim, Satisfactory, Palworld, ARK, Rust, ...)
+Built a self-hosted control panel for game servers in my homelab. Cross-platform, MIT licensed.
 ```
 
 ---
 
-## 4) Per-game subreddits
+## Per-game subreddits
 
-Lead with the game-specific value, not the project meta. r/selfhosted folks like
-"my homelab project" framing; gamers want "the tool that makes running MY server
-easier".
+Lead with the game-specific value, not the project meta.
 
 ### r/valheim
 
-**Title:**
-
 ```
-[Tool] Browser dashboard for managing a Valheim dedicated server — one-click install, mod browser, backups, RCON, scheduled restarts
-```
+Title: Browser dashboard for managing a Valheim dedicated server
 
-**Body:**
+Made this because I was tired of SSH'ing into the box every time I wanted to install a mod or restart the server. Runs as a service on the host machine, gives you a browser UI.
 
-```
-If you're running a Valheim dedicated server, I made a thing that takes the pain
-out of it. **GameServerControl** is a self-hosted dashboard you run on the same
-machine (or any Windows/Linux/macOS box on your network).
+For Valheim specifically:
 
-[Screenshot: Valheim server card in dashboard]
+- One-click install. Pick "Valheim", give it a path, the agent runs steamcmd and registers it.
+- Built-in Thunderstore browser. Search valheim.thunderstore.io, filter to server-side mods, click Install. BepInEx dependencies resolve automatically. Auto-update on installed mods.
+- Backups + restore of worlds_local + characters_local. Scheduled hourly if you want.
+- Scheduled daily restarts so the server doesn't hit the memory leak.
+- Discord webhook if the server crashes.
 
-What it does for Valheim specifically:
+Cross-platform agent, native Windows client, browser UI works on any device.
 
-* **One-click install** — pick "Valheim" → enter a name → done. SteamCMD runs
-  in the background, server registers itself.
-* **Mod browser** — searches valheim.thunderstore.io directly. Filter to
-  server-side-only mods (your friends don't need to install anything on their
-  end). Click "Install", it pulls the zip + dependencies + drops the DLL into
-  BepInEx/plugins.
-* **Auto-update mods** — "Check for updates" button compares installed versions
-  against Thunderstore and lets you bulk-upgrade.
-* **Live player list** via RCON — kick/ban/broadcast.
-* **Backups + restore** — zips your `worlds_local` + `characters_local` on a
-  schedule. Restore puts them back with one click.
-* **Discord webhook** — get pinged when the server crashes, or when a scheduled
-  backup completes.
-* **Scheduled restarts** — daily 4am restart so memory leaks don't take you down.
-
-One-line Windows install (PowerShell as Admin):
-```
-iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
-```
-
-Linux & macOS install commands + screenshots + full feature list:
-github.com/tyrus2244/GameServerControl
-
-MIT-licensed, no SaaS, your server stays your server. Built by TK-ECLIPSE.
+https://github.com/tyrus2244/GameServerControl
 ```
 
 ### r/SatisfactoryGame
 
-**Title:**
-
 ```
-[Tool] One-click Satisfactory dedicated server install + browser dashboard (mod browser, backups, live AGS toggles)
-```
+Title: Dedicated server dashboard with one-click install, ficsit.app mod browser, live AGS toggles
 
-**Body:**
+Tool for Satisfactory dedicated server admins. Runs on the host machine, browser UI from anywhere.
 
-```
-Spent way too long manually setting up dedicated servers, so I built a tool that
-does it in one click. GameServerControl runs as a service on your host machine,
-gives you a browser dashboard (or native Windows app) for managing every server
-in one place.
+- One-click install via SteamCMD. Pick "Satisfactory", give it a path, done.
+- ficsit.app mod browser built in (the GraphQL API). Filter to server-side mods, install with one click.
+- Talks to Satisfactory's Admin API live. Claim server, rename, set passwords, toggle all 13 Advanced Game Settings (NoPower, GodMode, FlightMode, StartingTier...) without restarting.
+- Session ID surfaced in the UI like Windrose's invite code.
+- Backups of FactoryGame/Saved, scheduled if you want.
+- Crash detection with Discord webhook.
 
-[Screenshot: Satisfactory server card]
-
-Satisfactory-specific features:
-
-* **One-click install** — pick "Satisfactory" → name + install path → SteamCMD
-  fetches it in the background → server registers automatically.
-* **Full ficsit.app mod browser** built into the dashboard. Search, filter to
-  server-side-only mods, install with one click. Auto-update too.
-* **Live Admin API integration** — claim server, rename, set client/admin
-  passwords, toggle all 13 Advanced Game Settings (NoPower, GodMode, FlightMode,
-  StartingTier, etc.) without restarting.
-* **Session ID** displayed prominently like a Windrose invite code so you can
-  share it.
-* **Backups + restore** of FactoryGame/Saved.
-* **Scheduled maintenance** — daily restart, weekly SteamCMD update, hourly backup.
-* **Crash detection + Discord ping**.
-
-One-line Windows install (PowerShell as Admin):
-```
-iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
-```
-
-Linux & macOS too. github.com/tyrus2244/GameServerControl — MIT license, no SaaS.
-Built by TK-ECLIPSE.
+https://github.com/tyrus2244/GameServerControl
 ```
 
 ### r/Palworld
 
-**Title:**
-
 ```
-[Tool] Self-hosted dashboard for managing a Palworld dedicated server — one-click install, RCON, backups, schemes
-```
+Title: Dashboard for managing a Palworld dedicated server
 
-**Body:** (same shape as Valheim/Satisfactory, swap features:)
+Same pattern as a real-game dedicated-server admin tool: one click install via SteamCMD, live RCON (kick/ban/broadcast), backups, scheduled restarts.
 
-```
-* Installs Palworld dedicated via SteamCMD with one click.
-* Auto-discovered config — pulls every setting from DefaultPalWorldSettings.ini
-  so you can tweak 109 fields, not just the handful most tools expose.
-* RCON (port 25575 default) — kick/ban/broadcast/shutdown live.
-* Mod browser — curated PalSchema + future entries.
-* Backups + restore + scheduled cadence.
-* Discord alerts on crash.
+Auto-discovers every setting in DefaultPalWorldSettings.ini, so you can tweak all 109 fields from the dashboard, not just the curated subset most tools expose.
 
-github.com/tyrus2244/GameServerControl
+Mod browser supports the PalSchema curated list (more entries coming, the Palworld mod ecosystem is smaller than Valheim's).
+
+https://github.com/tyrus2244/GameServerControl
 ```
 
 ### r/ARK
 
-**Title:**
-
 ```
-[Tool] One-click ARK Survival Ascended / Survival Evolved dedicated server install + mod browser (browser dashboard)
-```
+Title: One-click ARK ASA / ARK SE dedicated server install + Workshop mod browser
 
-**Body:**
+For anyone running ARK dedicated.
 
-```
-* Installs ARK ASA (app 2430930) or ARK SE (app 376030) via SteamCMD in one click.
-* Steam Workshop integration — paste a workshop URL or ID, agent runs
-  `+workshop_download_item`, updates your `?GameModIds=` launch arg automatically.
-* RCON live management.
-* Backups + restore of ShooterGame/Saved.
-* Discord crash alerts.
+- Pick ARK ASA (app 2430930) or ARK SE (app 376030), point at an install path, done. SteamCMD runs in the background with a real progress bar (the % parsed from steamcmd's output, not a spinner).
+- ARK ASA installs are ~50GB so the live progress matters.
+- Paste a Workshop URL or ID, agent runs +workshop_download_item, updates your ?GameModIds= launch arg automatically.
+- RCON kick/ban/broadcast.
+- Backups + restore of ShooterGame/Saved.
 
-ARK ASA installs can take a while (~50 GB) — there's a real progress bar with %
-parsed from SteamCMD's output, not just a spinner.
-
-github.com/tyrus2244/GameServerControl
+https://github.com/tyrus2244/GameServerControl
 ```
 
 ---
 
-## 5) Awesome-Selfhosted PR
+## awesome-selfhosted PR
 
-**Where:** https://github.com/awesome-selfhosted/awesome-selfhosted
+Section: Games (look for `## Games` in their README).
 
-**Steps:**
-1. Fork the repo via the GitHub UI.
-2. Edit `README.md` on your fork.
-3. Find the "Games" section (Ctrl-F: `## Games`).
-4. Add this line alphabetically into the section (it sits between "Foundry-VTT" and "Geoboard-Server" or whatever it lands next to):
+Entry to add (alphabetical position):
 
 ```
-- [GameServerControl](https://github.com/tyrus2244/GameServerControl) - Self-hosted control panel for Steam dedicated game servers (Valheim, Satisfactory, Palworld, ARK, Rust, 7 Days to Die, Terraria, Don't Starve Together, Project Zomboid). One-click install via SteamCMD, server-side mod management (Thunderstore + ficsit.app + Workshop), RCON player management, scheduled backups, Discord webhook alerts, multi-host federation. Browser UI + native Windows desktop client. `MIT` `C#`
+- [GameServerControl](https://github.com/tyrus2244/GameServerControl) - Control panel for Steam dedicated game servers (Valheim, Satisfactory, Palworld, ARK, Rust, 7 Days to Die, Terraria, Don't Starve Together, Project Zomboid). One-click install via SteamCMD, mod browsers (Thunderstore, ficsit.app, Workshop), RCON player management, scheduled backups, Discord webhooks, multi-host federation. Browser UI + native Windows client. `MIT` `C#`
 ```
 
-5. Commit message: `Add GameServerControl to Games section`
-6. PR title: `Add GameServerControl`
-7. PR body — paste this:
+PR title: `Add GameServerControl`
+
+PR body:
 
 ```
-**Project link:** https://github.com/tyrus2244/GameServerControl
+- Open source, MIT.
+- Self-hosted (Windows service / systemd unit / macOS LaunchAgent), no SaaS dependency.
+- Documented install on Windows, Linux, and macOS.
+- Active development.
 
-**Self-hosted criteria:**
-- ✅ Available under an open-source license (MIT)
-- ✅ Self-hostable — runs as a service on the user's own machine (Windows service / systemd unit / macOS LaunchAgent)
-- ✅ Active development — v1.0.3 released today, regular commits
-- ✅ Documentation — README covers install, config, security, contribution
-- ✅ No SaaS / no cloud dependency
-- ✅ Tested deploy paths for Windows, Linux, and macOS (Apple Silicon + Intel)
-
-**Category:** Games — it's a control panel for self-hosted game servers, fits alongside other game-server admin tools in the section.
-
-**Tagline justification:** I included a longer feature list because game-server admin tools are typically single-game (e.g. just a Valheim panel, just a Minecraft panel) — calling out the multi-game support + the specific mod ecosystems matters for discoverability by the right users.
-
-Built by TK-ECLIPSE. Open to feedback on category fit or formatting before merge.
+Category: Games. Fits alongside other game-server admin tools in that section.
 ```
-
----
-
-## What I can't do for you (sorry)
-
-I can't:
-* Post these to HN or Reddit — your accounts, you have to log in.
-* Open the awesome-selfhosted PR — needs your GitHub credentials (you revoked the PATs).
-* Set repo topic tags — same auth issue (see below for the workaround).
-
-What I CAN do:
-* If you post any of these and someone replies, I can draft the response. Just paste what they said.
-* If a maintainer asks for changes on the awesome-selfhosted PR, I can edit the entry.
-* If HN / Reddit feedback identifies a missing feature, I can build it.
-
----
-
-❤ https://paypal.me/TKECLIPSE

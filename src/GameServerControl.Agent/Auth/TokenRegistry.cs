@@ -16,9 +16,8 @@ public sealed record TokenRecord
 }
 
 /// <summary>
-/// File-backed multi-user token store. The legacy single <c>Agent:ApiToken</c> in appsettings.json
-/// is still honored as an "Admin" token so upgrading from a single-token setup is seamless. All
-/// additional tokens live in <c>tokens.json</c> next to servers.json and carry an explicit role.
+/// Multi-token store backed by tokens.json. The legacy single Agent:ApiToken setting still
+/// works and is treated as an Admin token for backward compatibility.
 /// </summary>
 public sealed class TokenRegistry
 {

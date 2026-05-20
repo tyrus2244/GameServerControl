@@ -28,10 +28,8 @@ function Write-Skip($msg) { Write-Host "    -- $msg" -ForegroundColor DarkGray }
 function Write-Warn2($msg){ Write-Host "    !! $msg" -ForegroundColor Yellow }
 
 Write-Host ""
-Write-Host "===============================================================" -ForegroundColor Red
-Write-Host "  TK-ECLIPSE  ·  GameServerControl  ·  Client-only installer   " -ForegroundColor Red
-Write-Host "  (no Admin / UAC required)                                    " -ForegroundColor Red
-Write-Host "===============================================================" -ForegroundColor Red
+Write-Host "GameServerControl client installer (no admin required)"
+Write-Host "------------------------------------------------------"
 
 # ---- .NET 8 Desktop Runtime check (WPF needs the Desktop bundle, not just ASP.NET) ----
 Write-Step ".NET 8 Desktop Runtime"
@@ -96,7 +94,7 @@ $lnk = $sh.CreateShortcut($lnkPath)
 $lnk.TargetPath       = $clientExe
 $lnk.WorkingDirectory = $clientDir
 $lnk.IconLocation     = "$clientExe,0"
-$lnk.Description      = 'GameServerControl dashboard — TK-ECLIPSE'
+$lnk.Description      = 'GameServerControl dashboard'
 $lnk.Save()
 Write-Ok "Shortcut: $lnkPath"
 
@@ -104,14 +102,8 @@ Write-Ok "Shortcut: $lnkPath"
 Get-Item "$env:LOCALAPPDATA\IconCache.db" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
-Write-Host "===============================================================" -ForegroundColor Red
-Write-Host "  Done!  ($($release.tag_name))" -ForegroundColor Green
+Write-Host "Installed $($release.tag_name)."
 Write-Host ""
-Write-Host "  Client: double-click the desktop shortcut" -ForegroundColor Gray
-Write-Host "  Install: $clientDir" -ForegroundColor Gray
+Write-Host "  Install dir: $clientDir"
+Write-Host "  Next:        open the client, Settings, paste your agent URL + API token."
 Write-Host ""
-Write-Host "  Next: open the client, click Settings, and paste the agent URL + API token" -ForegroundColor Gray
-Write-Host "  from your existing GameServerControl host (e.g. http://100.x.y.z:5099)" -ForegroundColor Gray
-Write-Host ""
-Write-Host "  ❤ Support: https://paypal.me/TKECLIPSE" -ForegroundColor Red
-Write-Host "===============================================================" -ForegroundColor Red

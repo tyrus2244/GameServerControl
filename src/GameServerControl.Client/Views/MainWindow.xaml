@@ -55,14 +55,14 @@
                     </StackPanel>
                 </Border>
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button Content="🚀 Create Server" Style="{StaticResource ActionButton}" Command="{Binding CreateServerCommand}"
+                    <Button Content="Create Server" Style="{StaticResource ActionButton}" Command="{Binding CreateServerCommand}"
                             Foreground="{StaticResource AccentBrush}" FontWeight="Bold"
-                            ToolTip="Install a brand-new dedicated server from scratch (SteamCMD)"/>
-                    <Button Content="🔍 Discover" Style="{StaticResource ActionButton}" Command="{Binding DiscoverServersCommand}" ToolTip="Auto-detect installed dedicated servers"/>
-                    <Button Content="+ Add (manual)" Style="{StaticResource ActionButton}" Command="{Binding AddServerCommand}" ToolTip="Register an already-installed server"/>
+                            ToolTip="Install a new dedicated server via SteamCMD"/>
+                    <Button Content="Discover" Style="{StaticResource ActionButton}" Command="{Binding DiscoverServersCommand}" ToolTip="Auto-detect installed dedicated servers"/>
+                    <Button Content="Add" Style="{StaticResource ActionButton}" Command="{Binding AddServerCommand}" ToolTip="Register an already-installed server"/>
                     <Button Content="Refresh" Style="{StaticResource ActionButton}" Command="{Binding RefreshAllCommand}"/>
                     <Button Content="Reconnect" Style="{StaticResource ActionButton}" Command="{Binding ReconnectCommand}"/>
-                    <Button Content="🔑 Tokens" Style="{StaticResource ActionButton}" Command="{Binding OpenTokensCommand}" ToolTip="Manage API tokens + roles"/>
+                    <Button Content="Tokens" Style="{StaticResource ActionButton}" Command="{Binding OpenTokensCommand}" ToolTip="Manage API tokens and roles"/>
                     <Button Content="Settings" Style="{StaticResource ActionButton}" Command="{Binding OpenSettingsCommand}"/>
                 </StackPanel>
             </Grid>
@@ -72,9 +72,8 @@
         <Border Grid.Row="1" Background="{StaticResource AccentDimBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,1"
                 Padding="20,8" Visibility="{Binding UpdateAvailable, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="⬆" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
-                <TextBlock Text="A new release is available — " VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{StaticResource TextBrush}"/>
-                <TextBlock Text="{Binding UpdateBannerText}" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="New release available." VerticalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="{Binding UpdateBannerText, StringFormat=' {0}'}" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
                 <Button Content="View release notes" Style="{StaticResource ActionButton}"
                         Command="{Binding OpenUpdateUrlCommand}" Margin="14,0,0,0"/>
             </StackPanel>
@@ -99,7 +98,6 @@
                                 <!-- Title row -->
                                 <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding GameIcon}" FontSize="22" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                         <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
                                         <TextBlock Text="{Binding GameType, StringFormat=' · {0}'}" Foreground="{StaticResource TextDimBrush}" Margin="6,2,0,0" VerticalAlignment="Center"/>
                                         <Border Style="{StaticResource StatusPill}" Margin="10,0,0,0"
@@ -130,12 +128,12 @@
                                                 Background="{StaticResource AccentDimBrush}"
                                                 BorderBrush="{StaticResource AccentBrush}">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="🔗 INVITE " FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                                                <TextBlock Text="INVITE " FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
                                                 <TextBlock Text="{Binding InviteCode}" FontSize="11" FontWeight="Bold" FontFamily="Consolas, Cascadia Mono"/>
-                                                <Button Content="📋" Padding="4,0" Margin="6,0,0,0" Background="Transparent" BorderThickness="0"
-                                                        Foreground="{StaticResource TextBrush}" Cursor="Hand"
+                                                <Button Content="Copy" Padding="6,0" Margin="8,0,0,0" Background="Transparent" BorderThickness="0"
+                                                        FontSize="10" Foreground="{StaticResource TextBrush}" Cursor="Hand"
                                                         Click="CopyInvite_Click" Tag="{Binding InviteCode}"
-                                                        ToolTip="Copy invite code"/>
+                                                        ToolTip="Copy invite code to clipboard"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
@@ -165,29 +163,29 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <Button Content="▶ Start" Style="{StaticResource ActionButton}" Command="{Binding StartCommand}"/>
-                                        <Button Content="■ Stop" Style="{StaticResource DangerButton}" Command="{Binding StopCommand}"/>
-                                        <Button Content="↻ Restart" Style="{StaticResource ActionButton}" Command="{Binding RestartCommand}"/>
-                                        <Button Content="⏷ Backup" Style="{StaticResource ActionButton}" Command="{Binding BackupCommand}"/>
-                                        <Button Content="📦 Backups" Style="{StaticResource ActionButton}" Command="{Binding BackupsCommand}" ToolTip="List, restore, or delete backups"/>
-                                        <Button Content="📊 Stats" Style="{StaticResource ActionButton}" Command="{Binding StatsCommand}" ToolTip="Live CPU/RAM history"/>
-                                        <Button Content="⤓ Update" Style="{StaticResource ActionButton}" Command="{Binding UpdateCommand}"/>
-                                        <Button Content="⚙ Configure" Style="{StaticResource ActionButton}" Command="{Binding ConfigureCommand}"/>
-                                        <Button Content="👥 Players" Style="{StaticResource ActionButton}" Command="{Binding PlayersCommand}"
-                                                ToolTip="Live RCON player list · kick / ban / broadcast"
+                                        <Button Content="Start" Style="{StaticResource ActionButton}" Command="{Binding StartCommand}"/>
+                                        <Button Content="Stop" Style="{StaticResource DangerButton}" Command="{Binding StopCommand}"/>
+                                        <Button Content="Restart" Style="{StaticResource ActionButton}" Command="{Binding RestartCommand}"/>
+                                        <Button Content="Backup" Style="{StaticResource ActionButton}" Command="{Binding BackupCommand}"/>
+                                        <Button Content="Backups" Style="{StaticResource ActionButton}" Command="{Binding BackupsCommand}" ToolTip="List, restore, or delete backups"/>
+                                        <Button Content="Stats" Style="{StaticResource ActionButton}" Command="{Binding StatsCommand}" ToolTip="Live CPU and RAM history"/>
+                                        <Button Content="Update" Style="{StaticResource ActionButton}" Command="{Binding UpdateCommand}"/>
+                                        <Button Content="Configure" Style="{StaticResource ActionButton}" Command="{Binding ConfigureCommand}"/>
+                                        <Button Content="Players" Style="{StaticResource ActionButton}" Command="{Binding PlayersCommand}"
+                                                ToolTip="Live RCON player list, kick / ban / broadcast"
                                                 Visibility="{Binding HasRcon, Converter={x:Static vm:BoolVisibilityConverter.Instance}}"/>
-                                        <Button Content="💬 Console" Style="{StaticResource ActionButton}" Command="{Binding ConsoleCommand}"
-                                                ToolTip="Full RCON console — raw commands, save world, shutdown countdown"/>
-                                        <Button Content="📜 Log" Style="{StaticResource ActionButton}" Command="{Binding LogCommand}"/>
-                                        <Button Content="🧩 Mods" Style="{StaticResource ActionButton}" Command="{Binding ModsCommand}" ToolTip="Manage server-side mods (BepInEx plugins, etc.)"/>
-                                        <Button Content="⏰ Schedule" Style="{StaticResource ActionButton}" Command="{Binding ScheduleCommand}" ToolTip="Recurring restart / update / backup"/>
-                                        <Button Content="✓ Apply" Style="{StaticResource ActionButton}" Command="{Binding ApplyConfigCommand}"/>
+                                        <Button Content="Console" Style="{StaticResource ActionButton}" Command="{Binding ConsoleCommand}"
+                                                ToolTip="Full RCON console (raw commands, save world, shutdown countdown)"/>
+                                        <Button Content="Log" Style="{StaticResource ActionButton}" Command="{Binding LogCommand}"/>
+                                        <Button Content="Mods" Style="{StaticResource ActionButton}" Command="{Binding ModsCommand}" ToolTip="Manage server-side mods"/>
+                                        <Button Content="Schedule" Style="{StaticResource ActionButton}" Command="{Binding ScheduleCommand}" ToolTip="Recurring restart, update, backup"/>
+                                        <Button Content="Apply" Style="{StaticResource ActionButton}" Command="{Binding ApplyConfigCommand}"/>
                                         <ProgressBar IsIndeterminate="True" Width="120" Height="6" Margin="12,0,0,0" VerticalAlignment="Center"
                                                      Visibility="{Binding IsBusy, Converter={x:Static vm:BoolVisibilityConverter.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Button Content="✎ Edit"   Style="{StaticResource ActionButton}" Command="{Binding EditCommand}"/>
-                                        <Button Content="🗑 Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
+                                        <Button Content="Edit"   Style="{StaticResource ActionButton}" Command="{Binding EditCommand}"/>
+                                        <Button Content="Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
                                     </StackPanel>
                                 </Grid>
                             </Grid>
@@ -229,8 +227,7 @@
                                 </ControlTemplate>
                             </Button.Template>
                             <TextBlock FontSize="11" FontFamily="Consolas, Cascadia Mono">
-                                <Run Text="❤" Foreground="{StaticResource AccentBrush}"/>
-                                <Run Text=" PayPal · " Foreground="{StaticResource TextDimBrush}"/>
+                                <Run Text="PayPal · " Foreground="{StaticResource TextDimBrush}"/>
                                 <Run Text="TK-ECLIPSE" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
                             </TextBlock>
                         </Button>

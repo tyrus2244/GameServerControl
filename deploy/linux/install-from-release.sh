@@ -37,9 +37,8 @@ skip()  { echo -e "    ${GRAY}-- $*${NC}"; }
 warn()  { echo -e "    ${YELLOW}!! $*${NC}"; }
 fail()  { echo -e "\n${RED}ERROR:${NC} $*\n"; exit 1; }
 
-echo -e "${RED}=================================================================${NC}"
-echo -e "${RED}  TK-ECLIPSE  ·  GameServerControl  ·  Linux installer           ${NC}"
-echo -e "${RED}=================================================================${NC}"
+echo "GameServerControl installer (Linux)"
+echo "-----------------------------------"
 
 if [[ $EUID -ne 0 ]]; then
     fail "Run as root (sudo)."
@@ -169,13 +168,10 @@ else
 fi
 
 echo ""
-echo -e "${RED}=================================================================${NC}"
-echo -e "${GREEN}  Done!  ($tag)${NC}"
+echo "Installed $tag."
 echo ""
-echo -e "${GRAY}  Service:    systemctl status $UNIT_NAME${NC}"
-echo -e "${GRAY}  Logs:       journalctl -u $UNIT_NAME -f${NC}"
-echo -e "${GRAY}  Web UI:     http://<this-host>:5099/${NC}"
-echo -e "${GRAY}  Config:     $INSTALL_DIR/appsettings.json${NC}"
+echo "  Service: systemctl status $UNIT_NAME"
+echo "  Logs:    journalctl -u $UNIT_NAME -f"
+echo "  Web UI:  http://<this-host>:5099/"
+echo "  Config:  $INSTALL_DIR/appsettings.json"
 echo ""
-echo -e "${RED}  ❤ Support: https://paypal.me/TKECLIPSE${NC}"
-echo -e "${RED}=================================================================${NC}"

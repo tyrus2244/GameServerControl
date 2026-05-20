@@ -58,9 +58,8 @@ function Write-Skip($msg) { Write-Host "    -- $msg" -ForegroundColor DarkGray }
 function Write-Warn2($msg){ Write-Host "    !! $msg" -ForegroundColor Yellow }
 
 Write-Host ""
-Write-Host "===============================================================" -ForegroundColor Red
-Write-Host "  TK-ECLIPSE  ·  GameServerControl  ·  Windows installer       " -ForegroundColor Red
-Write-Host "===============================================================" -ForegroundColor Red
+Write-Host "GameServerControl installer (Windows)"
+Write-Host "-------------------------------------"
 
 # ---- .NET 8 Desktop Runtime check ----
 Write-Step ".NET 8 Desktop Runtime"
@@ -170,7 +169,7 @@ if ($existing) {
     Invoke-Sc -ScArgs @('create', $svcName,
         'binPath=', "`"$svcExePath`"",
         'start=', 'auto',
-        'DisplayName=', 'GameServerControl Agent (TK-ECLIPSE)') -Label 'sc.exe create' | Out-Null
+        'DisplayName=', 'GameServerControl Agent') -Label 'sc.exe create' | Out-Null
     # description is non-critical — log a warning instead of failing the whole install.
     try { Invoke-Sc -ScArgs @('description', $svcName, "Self-hosted dashboard for game-server processes (start/stop/backup/update/RCON). github.com/$repo") -Label 'sc.exe description' | Out-Null }
     catch { Write-Warn2 "Couldn't set service description: $_" }
@@ -215,7 +214,7 @@ foreach ($lp in $lnkPaths) {
     $lnk.TargetPath       = $clientExe
     $lnk.WorkingDirectory = $clientDir
     $lnk.IconLocation     = "$clientExe,0"
-    $lnk.Description      = 'GameServerControl dashboard — TK-ECLIPSE'
+    $lnk.Description      = 'GameServerControl dashboard'
     $lnk.Save()
     Write-Ok "Shortcut: $lp"
 }
@@ -226,7 +225,7 @@ if (-not (Test-Path $userLnk)) {
     $lnk.TargetPath       = $clientExe
     $lnk.WorkingDirectory = $clientDir
     $lnk.IconLocation     = "$clientExe,0"
-    $lnk.Description      = 'GameServerControl dashboard — TK-ECLIPSE'
+    $lnk.Description      = 'GameServerControl dashboard'
     $lnk.Save()
     Write-Ok "Shortcut: $userLnk"
 }
@@ -254,13 +253,10 @@ try {
 }
 
 Write-Host ""
-Write-Host "===============================================================" -ForegroundColor Red
-Write-Host "  Done!  ($($release.tag_name))" -ForegroundColor Green
+Write-Host "Installed $($release.tag_name)."
 Write-Host ""
-Write-Host "  Agent service: $svcName" -ForegroundColor Gray
-Write-Host "  Web UI:        https://localhost:5099/  (also tailnet IP)" -ForegroundColor Gray
-Write-Host "  Client:        double-click the desktop shortcut" -ForegroundColor Gray
-Write-Host "  Config:        $agentDir\appsettings.json" -ForegroundColor Gray
+Write-Host "  Service: $svcName"
+Write-Host "  Web UI:  https://localhost:5099/"
+Write-Host "  Client:  desktop shortcut"
+Write-Host "  Config:  $agentDir\appsettings.json"
 Write-Host ""
-Write-Host "  ❤ Support: https://paypal.me/TKECLIPSE" -ForegroundColor Red
-Write-Host "===============================================================" -ForegroundColor Red
