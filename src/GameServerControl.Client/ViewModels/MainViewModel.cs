@@ -122,6 +122,21 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void CreateServer()
+    {
+        if (_clients.Count == 0) { Toast("Not connected — open Settings first."); return; }
+        // Wizard talks directly to one agent (first one); progress is broadcast on that agent's hub.
+        var client = _clients.Values.First();
+        var hub = _hubs.Values.FirstOrDefault();
+        if (hub is null) { Toast("Status hub not connected — can't stream install progress."); return; }
+        var win = new CreateServerWindow(client, hub, () => _ = ReloadServerList())
+        {
+            Owner = Application.Current.MainWindow
+        };
+        win.Show();
+    }
+
+    [RelayCommand]
     private void DiscoverServers()
     {
         if (_clients.Count == 0) { Toast("Not connected — open Settings first."); return; }

@@ -10,6 +10,7 @@ public sealed class StatusHubClient : IAsyncDisposable
     public event Action<ServerStatus>? StatusChanged;
     public event Action<LogLine>? LogLine;
     public event Action<bool>? ConnectionChanged;
+    public event Action<InstallProgress>? InstallProgress;
 
     public StatusHubClient(string agentUrl, string token)
     {
@@ -33,6 +34,7 @@ public sealed class StatusHubClient : IAsyncDisposable
 
         _conn.On<ServerStatus>("statusChanged", s => StatusChanged?.Invoke(s));
         _conn.On<LogLine>("logLine", l => LogLine?.Invoke(l));
+        _conn.On<InstallProgress>("installProgress", p => InstallProgress?.Invoke(p));
         _conn.Closed += _ => { ConnectionChanged?.Invoke(false); return Task.CompletedTask; };
         _conn.Reconnected += _ => { ConnectionChanged?.Invoke(true); return Task.CompletedTask; };
         _conn.Reconnecting += _ => { ConnectionChanged?.Invoke(false); return Task.CompletedTask; };

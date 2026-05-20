@@ -227,6 +227,24 @@ public sealed class AgentClient
             throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {await r.Content.ReadAsStringAsync(ct)}");
     }
 
+    public async Task<InstallJobAck> InstallServerAsync(InstallServerRequest req, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(req, JsonOpts);
+        var r = await _http.PostAsync("/api/servers/install",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        var s = await r.Content.ReadAsStringAsync(ct);
+        if (!r.IsSuccessStatusCode) throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {s}");
+        return JsonSerializer.Deserialize<InstallJobAck>(s, JsonOpts) ?? throw new InvalidOperationException("Empty install ack");
+    }
+
+    public async Task<InstallProgress?> GetInstallProgressAsync(string jobId, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/install/{jobId}", ct);
+        if (!r.IsSuccessStatusCode) return null;
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<InstallProgress>(s, JsonOpts);
+    }
+
     public async Task<UpdateStatus?> GetVersionAsync(CancellationToken ct = default)
     {
         try

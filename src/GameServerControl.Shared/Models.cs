@@ -109,6 +109,29 @@ public record UpdateStatus(
     bool UpdateAvailable,
     DateTimeOffset? CheckedAt);
 
+/// <summary>
+/// Request to provision a brand-new dedicated server from scratch via SteamCMD.
+/// The agent downloads SteamCMD if missing, runs +app_update, then registers the supplied
+/// ServerDef. SteamAppId and ServerDef.SteamAppId should match — backend uses the request
+/// field for the actual install command.
+/// </summary>
+public record InstallServerRequest(
+    string SteamAppId,        // Steam dedicated-server app ID, e.g. "896660" (Valheim)
+    string InstallPath,       // Where the server should land on the agent host
+    ServerDef ServerDef);     // The ServerDef to register on success (GuestWorkingDir = InstallPath)
+
+/// <summary>Single line of progress for an in-flight install. Streamed via SignalR.</summary>
+public record InstallProgress(
+    string JobId,
+    string Phase,             // "queued" | "steamcmd" | "register" | "done" | "failed"
+    string Line,              // Latest stdout/log line, or a human-readable status message
+    int? PercentHint,         // Best-effort 0-100 from SteamCMD's "Update state (0x[…]) downloading, progress: 42.51" lines
+    bool Finished,
+    bool Success);
+
+/// <summary>Synchronous response from POST /api/servers/install — the job is now running async.</summary>
+public record InstallJobAck(string JobId, string Message);
+
 public enum TokenRole
 {
     Admin,

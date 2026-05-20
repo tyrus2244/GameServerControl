@@ -135,6 +135,7 @@
     <span class="sig" title="TK-ECLIPSE — built by tyrus">TK-ECLIPSE</span>
     <div class="url" id="header-url"></div>
     <div class="pill" id="conn"><span class="dot"></span><span id="conn-label">Connecting…</span></div>
+    <button onclick="openCreateServer()" style="background:var(--accent);color:#fff;font-weight:700">🚀 Create Server</button>
     <button onclick="refresh()">↻ Refresh</button>
     <button onclick="signout()">⎋ Sign out</button>
   </header>
@@ -340,6 +341,185 @@ function openDrawer(title){
 function closeDrawer(){
   $('#drawer').classList.remove('show');
   $('#scrim').classList.remove('show');
+}
+
+// ----- Create Server drawer (the marquee feature) -----
+// Same curated game list as the WPF wizard. Steam app IDs are authoritative; preset values
+// are duplicated client-side because the agent's /install endpoint takes a fully-resolved ServerDef.
+const CREATE_GAMES = [
+  { key:'valheim',      label:'Valheim',                  icon:'⚔',  appId:'896660',  size:'~1 GB',   dir:'Valheim',       exe:'valheim_server.exe',                                        args:['-nographics','-batchmode','-name','MyServer','-port','2456','-world','MyWorld','-password','secret'] },
+  { key:'palworld',     label:'Palworld',                 icon:'🐾', appId:'2394010', size:'~7 GB',   dir:'PalServer',     exe:'PalServer\\PalServer.exe',                                  args:['-useperfthreads','-NoAsyncLoadingThread','-UseMultithreadForDS','EpicApp=PalServer'] },
+  { key:'satisfactory', label:'Satisfactory',             icon:'⚙',  appId:'1690800', size:'~12 GB',  dir:'Satisfactory',   exe:'FactoryServer.exe',                                         args:['-log','-unattended'] },
+  { key:'ark-asa',      label:'ARK: Survival Ascended',   icon:'🦖', appId:'2430930', size:'~50 GB',  dir:'ArkAscended',   exe:'ShooterGame\\Binaries\\Win64\\ArkAscendedServer.exe',        args:['TheIsland_WP?listen?MaxPlayers=20?ServerPassword=?ServerAdminPassword=changeme'] },
+  { key:'ark-se',       label:'ARK: Survival Evolved',    icon:'🦖', appId:'376030',  size:'~14 GB',  dir:'ArkSE',         exe:'ShooterGame\\Binaries\\Win64\\ShooterGameServer.exe',        args:['TheIsland?listen?MaxPlayers=20?ServerAdminPassword=changeme','-server','-log'] },
+  { key:'rust',         label:'Rust',                     icon:'🔧', appId:'258550',  size:'~8 GB',   dir:'Rust',          exe:'RustDedicated.exe',                                         args:['-batchmode','+server.port','28015','+rcon.port','28016','+rcon.password','changeme','+server.hostname','My Rust Server'] },
+  { key:'7dtd',         label:'7 Days to Die',            icon:'🧟', appId:'294420',  size:'~2 GB',   dir:'SevenDaysToDie',exe:'7DaysToDieServer.exe',                                      args:['-quit','-batchmode','-nographics','-configfile=serverconfig.xml'] },
+  { key:'terraria',     label:'Terraria',                 icon:'🌳', appId:'105600',  size:'~0.5 GB', dir:'Terraria',      exe:'TerrariaServer.exe',                                        args:['-config','serverconfig.txt'] },
+  { key:'dst',          label:"Don't Starve Together",    icon:'❄',  appId:'343050',  size:'~1 GB',   dir:'DST',           exe:'bin\\dontstarve_dedicated_server_nullrenderer.exe',         args:['-console','-cluster','MyCluster','-shard','Master'] },
+  { key:'zomboid',      label:'Project Zomboid',          icon:'🧟', appId:'380870',  size:'~1 GB',   dir:'ProjectZomboid',exe:'StartServer64.bat',                                         args:[] },
+];
+
+let CREATE_STATE = { step:1, game:null, jobId:null };
+
+function openCreateServer(){
+  CREATE_STATE = { step:1, game:null, jobId:null };
+  openDrawer('🚀 Create Server');
+  drawerCtx = { kind:'create' };
+  renderCreateStep();
+}
+
+function renderCreateStep(){
+  if (CREATE_STATE.step === 1){
+    // Step 1: game picker
+    $('#drawer-body').innerHTML = `
+      <div style="margin-bottom:12px;color:var(--textDim);font-size:12px">Pick a dedicated server to install. SteamCMD does the heavy lifting.</div>
+      ${CREATE_GAMES.map(g => `
+        <div class="row" style="cursor:pointer" onclick="pickCreateGame('${g.key}')">
+          <div style="font-size:28px;margin-right:8px">${g.icon}</div>
+          <div class="grow">
+            <div style="font-weight:600">${esc(g.label)}</div>
+            <div class="small">App ID ${g.appId} · est. ${esc(g.size)}</div>
+          </div>
+          <div style="color:var(--textDim)">❯</div>
+        </div>
+      `).join('')}`;
+    $('#drawer-footer').style.display = 'none';
+  } else if (CREATE_STATE.step === 2){
+    // Step 2: name + path
+    const g = CREATE_STATE.game;
+    const defaultPath = `C:\\GameServers\\${g.dir}`;
+    $('#drawer-body').innerHTML = `
+      <div style="font-size:16px;font-weight:700;margin-bottom:12px">${g.icon}  ${esc(g.label)}  ·  Steam App ID ${g.appId}</div>
+      <label>Display name</label>
+      <input type="text" id="cs-name" value="${esc(g.label)}"/>
+      <label>ID (lowercase, dashes only)</label>
+      <input type="text" id="cs-id" value="${slugify(g.label)}" style="font-family:Consolas,monospace"/>
+      <label>Install location</label>
+      <input type="text" id="cs-path" value="${esc(defaultPath)}" style="font-family:Consolas,monospace"/>
+      <div style="background:var(--bg2);border:1px solid var(--accentDim);border-radius:6px;padding:10px;margin-top:14px;font-size:11px;color:var(--textDim);font-family:Consolas,monospace">
+        EXE: <span id="cs-preview-exe"></span><br/>
+        ARGS: ${esc(g.args.join(' ') || '(none)')}
+      </div>
+      <div id="cs-err" style="color:var(--accent);margin-top:10px;display:none"></div>`;
+    document.getElementById('cs-name').addEventListener('input', updateCreatePreview);
+    document.getElementById('cs-id').addEventListener('input', updateCreatePreview);
+    document.getElementById('cs-path').addEventListener('input', updateCreatePreview);
+    updateCreatePreview();
+    $('#drawer-footer').style.display = 'flex';
+    $('#drawer-footer').innerHTML = `
+      <button onclick="createBack()">← Back</button>
+      <button style="background:var(--accent);color:#fff;font-weight:700" onclick="createInstall()">⬇ Install</button>`;
+  } else {
+    // Step 3: progress
+    const g = CREATE_STATE.game;
+    $('#drawer-body').innerHTML = `
+      <div id="cs-progress-header" style="font-size:16px;font-weight:700;margin-bottom:10px">Installing ${esc(g.label)}…</div>
+      <div style="height:12px;background:var(--bg3);border-radius:6px;overflow:hidden;margin-bottom:10px">
+        <div id="cs-bar" style="height:100%;width:0%;background:var(--accent);transition:width .25s"></div>
+      </div>
+      <div id="cs-status" class="small" style="margin-bottom:8px">Queued…</div>
+      <pre id="cs-log" style="background:var(--bg0);border:1px solid var(--border);border-radius:4px;padding:10px;font-size:11px;color:var(--textDim);max-height:340px;overflow:auto;white-space:pre-wrap;margin:0"></pre>`;
+    $('#drawer-footer').style.display = 'flex';
+    $('#drawer-footer').innerHTML = `
+      <button id="cs-done" onclick="closeDrawer()" disabled style="opacity:.5">Done</button>`;
+  }
+}
+
+function pickCreateGame(key){
+  CREATE_STATE.game = CREATE_GAMES.find(g => g.key === key);
+  CREATE_STATE.step = 2;
+  renderCreateStep();
+}
+function createBack(){
+  if (CREATE_STATE.step > 1){ CREATE_STATE.step--; renderCreateStep(); }
+}
+function updateCreatePreview(){
+  const g = CREATE_STATE.game;
+  const p = (document.getElementById('cs-path')?.value || '').trim().replace(/[\\\/]+$/,'');
+  document.getElementById('cs-preview-exe').textContent = p + '\\' + g.exe;
+}
+function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
+async function createInstall(){
+  const g = CREATE_STATE.game;
+  const name = (document.getElementById('cs-name').value || '').trim();
+  const id   = (document.getElementById('cs-id').value || '').trim();
+  const path = (document.getElementById('cs-path').value || '').trim().replace(/[\\\/]+$/,'');
+  const errEl = document.getElementById('cs-err');
+  errEl.style.display = 'none';
+  if (!name)               { errEl.textContent = 'Display name required.'; errEl.style.display = 'block'; return; }
+  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(id)) { errEl.textContent = 'ID must be lowercase letters, digits, and hyphens.'; errEl.style.display = 'block'; return; }
+  if (!path)               { errEl.textContent = 'Install location required.'; errEl.style.display = 'block'; return; }
+
+  const def = {
+    id, name, vmName: '', gameType: 'SteamGeneric',
+    guestExePath: path + '\\' + g.exe,
+    guestWorkingDir: path,
+    startArgs: g.args,
+    saveDirs: [],
+    steamAppId: g.appId,
+    guestCredentialId: 'default',
+    logPathInGuest: null, rconHost: 'auto', rconPort: null, rconPassword: null,
+    hostingMode: 'BareMetal',
+    scheduledTaskName: null, stopProcessNames: null, discordWebhookUrl: null
+  };
+
+  CREATE_STATE.step = 3;
+  renderCreateStep();
+  appendCreateLog('$ steamcmd +force_install_dir "' + path + '" +login anonymous +app_update ' + g.appId + ' validate +quit');
+
+  try {
+    const ack = await api('/api/servers/install', {
+      method:'POST', body: JSON.stringify({ steamAppId: g.appId, installPath: path, serverDef: def })
+    });
+    CREATE_STATE.jobId = ack.jobId;
+    document.getElementById('cs-status').textContent = 'Job: ' + ack.jobId + ' (live updates via SignalR or polling)';
+    // Polling fallback in case SignalR can't push (we don't connect SignalR from the web UI today).
+    pollInstallProgress(ack.jobId);
+  } catch (e) {
+    appendCreateLog('ERROR: ' + e.message);
+    document.getElementById('cs-status').textContent = 'Install request failed.';
+    document.getElementById('cs-done').disabled = false;
+    document.getElementById('cs-done').style.opacity = '1';
+  }
+}
+
+async function pollInstallProgress(jobId){
+  let lastLine = '';
+  while (true){
+    try {
+      const p = await api('/api/servers/install/' + jobId);
+      if (!p) { await new Promise(r => setTimeout(r, 2000)); continue; }
+      if (p.line && p.line !== lastLine){ appendCreateLog(p.line); lastLine = p.line; }
+      if (typeof p.percentHint === 'number'){ document.getElementById('cs-bar').style.width = p.percentHint + '%'; }
+      document.getElementById('cs-status').textContent = ({
+        'queued':'Queued…',
+        'steamcmd': p.percentHint != null ? `SteamCMD · ${p.percentHint}%` : 'SteamCMD running…',
+        'register':'Registering with dashboard…',
+        'done':'✅ Done — server is ready.',
+        'failed':'❌ Failed — see log above.'
+      })[p.phase] || p.phase;
+      if (p.finished){
+        document.getElementById('cs-progress-header').textContent = p.success
+          ? '✅ ' + CREATE_STATE.game.label + ' installed.'
+          : '❌ Install failed.';
+        if (p.success) { document.getElementById('cs-bar').style.width = '100%'; refresh(); }
+        document.getElementById('cs-done').disabled = false;
+        document.getElementById('cs-done').style.opacity = '1';
+        return;
+      }
+    } catch (e){ appendCreateLog('(progress poll: ' + e.message + ')'); }
+    await new Promise(r => setTimeout(r, 1500));
+  }
+}
+
+function appendCreateLog(line){
+  const el = document.getElementById('cs-log');
+  if (!el) return;
+  el.textContent += line + '\n';
+  // Cap to keep the DOM small on multi-hour ARK installs.
+  if (el.textContent.length > 50000) el.textContent = el.textContent.slice(-40000);
+  el.scrollTop = el.scrollHeight;
 }
 
 // ----- Players drawer -----

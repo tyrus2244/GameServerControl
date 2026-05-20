@@ -61,8 +61,11 @@
                     </StackPanel>
                 </Border>
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="🚀 Create Server" Style="{StaticResource ActionButton}" Command="{Binding CreateServerCommand}"
+                            Foreground="{StaticResource AccentBrush}" FontWeight="Bold"
+                            ToolTip="Install a brand-new dedicated server from scratch (SteamCMD)"/>
                     <Button Content="🔍 Discover" Style="{StaticResource ActionButton}" Command="{Binding DiscoverServersCommand}" ToolTip="Auto-detect installed dedicated servers"/>
-                    <Button Content="+ Add server" Style="{StaticResource ActionButton}" Command="{Binding AddServerCommand}"/>
+                    <Button Content="+ Add (manual)" Style="{StaticResource ActionButton}" Command="{Binding AddServerCommand}" ToolTip="Register an already-installed server"/>
                     <Button Content="Refresh" Style="{StaticResource ActionButton}" Command="{Binding RefreshAllCommand}"/>
                     <Button Content="Reconnect" Style="{StaticResource ActionButton}" Command="{Binding ReconnectCommand}"/>
                     <Button Content="🔑 Tokens" Style="{StaticResource ActionButton}" Command="{Binding OpenTokensCommand}" ToolTip="Manage API tokens + roles"/>

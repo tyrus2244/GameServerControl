@@ -45,6 +45,8 @@ builder.Services.AddSingleton<ServerStore>();
 builder.Services.AddSingleton<StatusTracker>();
 builder.Services.AddSingleton<ServerOrchestrator>();
 builder.Services.AddSingleton<MaintenanceScheduler>();
+builder.Services.AddSingleton<SteamCmdManager>();
+builder.Services.AddSingleton<ServerInstaller>();
 builder.Services.AddSingleton<GameServerControl.Agent.Notifications.DiscordNotifier>();
 builder.Services.AddSingleton<GameServerControl.Agent.Notifications.UpdateChecker>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<GameServerControl.Agent.Notifications.UpdateChecker>());
@@ -193,6 +195,31 @@ api.MapPost("/servers", (ServerDef def, ServerStore store) =>
     try { return Results.Ok(store.Add(def)); }
     catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
     catch (InvalidOperationException ex) { return Results.Conflict(new { error = ex.Message }); }
+});
+
+// "Create from scratch" — SteamCMD-installs a dedicated server then registers the ServerDef.
+// Returns immediately; progress streams over SignalR's "installProgress" event. Poll
+// GET /api/servers/install/{jobId} as a fallback if the SignalR channel is down.
+api.MapPost("/servers/install", (InstallServerRequest req, ServerInstaller installer, ServerRegistry registry) =>
+{
+    if (string.IsNullOrWhiteSpace(req.SteamAppId) || !req.SteamAppId.All(char.IsDigit))
+        return Results.BadRequest(new { error = "SteamAppId must be numeric." });
+    if (string.IsNullOrWhiteSpace(req.InstallPath))
+        return Results.BadRequest(new { error = "InstallPath is required." });
+    if (req.ServerDef is null)
+        return Results.BadRequest(new { error = "ServerDef is required." });
+    // Front-load the "id already taken" error so the wizard can show it before SteamCMD runs
+    // (waiting 20 minutes only to fail on registration is a terrible UX).
+    if (registry.Get(req.ServerDef.Id) is not null)
+        return Results.Conflict(new { error = $"Server with id '{req.ServerDef.Id}' already exists." });
+    var jobId = installer.StartJob(req);
+    return Results.Ok(new InstallJobAck(jobId, "Install job queued"));
+});
+
+api.MapGet("/servers/install/{jobId}", (string jobId, ServerInstaller installer) =>
+{
+    var p = installer.Get(jobId);
+    return p is null ? Results.NotFound() : Results.Ok(p);
 });
 
 api.MapPut("/servers/{id}", (string id, ServerDef def, ServerStore store) =>
