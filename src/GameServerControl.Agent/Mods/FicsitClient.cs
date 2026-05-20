@@ -107,12 +107,13 @@ public sealed class FicsitClient
             if (_cache is { } again && DateTime.UtcNow - again.FetchedAt < CacheTtl)
                 return again.Mods;
 
-            // Fetch up to 200 popular mods. ficsit.app's getMods endpoint paginates;
-            // we make one bigger call rather than chasing offsets — search is in-memory
-            // so a few hundred mods is plenty for substring filtering.
+            // Fetch up to 100 mods. ficsit.app's getMods endpoint paginates; we ask for
+            // a single chunk and filter in-memory. NOTE: ficsit rejects extra filter keys
+            // (order_by/order/hidden) silently with zero results, so we keep the filter
+            // minimal (limit/offset) and sort/filter ourselves on the response.
             const string graphql = @"
             {
-              getMods(filter: { limit: 200, offset: 0, order_by: popularity, order: desc, hidden: false }) {
+              getMods(filter: { limit: 100, offset: 0 }) {
                 mods {
                   id
                   mod_reference

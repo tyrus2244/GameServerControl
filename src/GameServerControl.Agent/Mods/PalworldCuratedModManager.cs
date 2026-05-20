@@ -63,18 +63,12 @@ public sealed class PalworldCuratedModManager : IModManager
         bool ServerSideOnly,
         string[] Categories);
 
+    // ⚠ Curated catalog — only entries with a verified GitHub Releases asset go here.
+    // Palguard intentionally NOT included: it ships from palguard.io, not GitHub, so the
+    // GitHub-Releases install path doesn't work. Users who want Palguard can use the
+    // "Install from URL" power-user box with palguard.io's direct download URL.
     private static readonly CuratedEntry[] CuratedList =
     {
-        new(ModId: "Palguard",
-            DisplayName: "Palguard",
-            Description: "Server admin tools — kick, ban, broadcast, save management, anti-cheat helpers. Drop-in DLL hook; clients don't need to install anything.",
-            Owner: "magicbots",
-            Repo: "PalGuard",
-            AssetNameContains: ".zip",
-            Kind: InstallKind.Win64ZipExtract,
-            ServerSideOnly: true,
-            Categories: new[] { "Admin", "Anti-cheat", "Server-side" }),
-
         new(ModId: "PalSchema",
             DisplayName: "PalSchema",
             Description: "Data-mod framework for Palworld dedicated servers. Lets other mods modify pals/items via JSON without binary patches. Server-only.",
@@ -85,7 +79,9 @@ public sealed class PalworldCuratedModManager : IModManager
             ServerSideOnly: true,
             Categories: new[] { "Framework", "Server-side" }),
 
-        // Add more here as you verify them: { ModId, DisplayName, Description, Owner, Repo, AssetNameContains, Kind, ServerSideOnly, Categories }
+        // Add more here as you verify them on GitHub:
+        // { ModId, DisplayName, Description, Owner, Repo, AssetNameContains, Kind, ServerSideOnly, Categories }
+        // For mods distributed outside GitHub (palguard.io etc.), users use the "Install from URL" box.
     };
 
     // ---- search ----
