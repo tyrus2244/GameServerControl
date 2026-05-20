@@ -60,6 +60,7 @@ builder.Services.AddSingleton<GameConfigFactory>();
 // Server-side mod management (one IModManager per game family). Add more here as they ship.
 builder.Services.AddSingleton<GameServerControl.Agent.Mods.ThunderstoreClient>();
 builder.Services.AddSingleton<GameServerControl.Agent.Mods.IModManager, GameServerControl.Agent.Mods.ValheimBepInExModManager>();
+builder.Services.AddSingleton<GameServerControl.Agent.Mods.IModManager, GameServerControl.Agent.Mods.SatisfactoryThunderstoreModManager>();
 builder.Services.AddSingleton<GameServerControl.Agent.Mods.ModManagerRegistry>();
 builder.Services.AddSingleton<SourceRconClient>();
 builder.Services.AddSingleton<IGameRcon, PalworldRcon>();
@@ -268,14 +269,30 @@ api.MapPost("/servers/{id}/autostart", async (string id, AutostartRequest req, S
     return ok ? Results.Ok(new { enabled = req.Enabled }) : Results.StatusCode(502);
 });
 
+// Honest per-game guidance when no marketplace integration exists yet.
+// Surfaced via /mods and /mods/search responses so the UI can render a useful message
+// instead of a flat "unsupported".
+static string ModUnsupportedReason(ServerDef def) => def.SteamAppId switch
+{
+    "2394010" => "Palworld doesn't have a centralized mod marketplace yet. " +
+                 "Server-side admin tools like Palguard exist — install manually into " +
+                 "PalServer\\Pal\\Binaries\\Win64\\. Follow Palguard's README on GitHub.",
+    "4129620" => "Windrose's modding ecosystem is still developing — no community marketplace yet. " +
+                 "Watch the official Windrose Discord for emerging tools.",
+    "2430930" => "ARK: Survival Ascended distributes mods through Steam Workshop, not Thunderstore. " +
+                 "Workshop-based mod management isn't wired into the dashboard yet.",
+    "376030"  => "ARK: Survival Evolved distributes mods through Steam Workshop, not Thunderstore. " +
+                 "Workshop-based mod management isn't wired into the dashboard yet.",
+    _         => "No mod manager registered for this game. Manage mods on disk for now."
+};
+
 api.MapGet("/servers/{id}/mods", async (string id, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
 {
     var def = reg.Get(id);
     if (def is null) return Results.NotFound();
     var mgr = mods.For(def);
     if (mgr is null)
-        return Results.Ok(new ModListResponse(Array.Empty<ModInfo>(), false,
-            "No mod manager registered for this game yet. Manage mods on disk for now — see the game's mod-loader docs.", null));
+        return Results.Ok(new ModListResponse(Array.Empty<ModInfo>(), false, ModUnsupportedReason(def), null));
     var list = await mgr.ListAsync(def, ct);
     return Results.Ok(new ModListResponse(list, true, null, mgr.ModsFolder(def)));
 });
@@ -286,8 +303,7 @@ api.MapGet("/servers/{id}/mods/search", async (string id, string? q, int? limit,
     if (def is null) return Results.NotFound();
     var mgr = mods.For(def);
     if (mgr is null)
-        return Results.Ok(new ModSearchResponse(Array.Empty<ModSearchResult>(), false, null,
-            "No mod marketplace registered for this game."));
+        return Results.Ok(new ModSearchResponse(Array.Empty<ModSearchResult>(), false, null, ModUnsupportedReason(def)));
     // Default to server-side-only so the UI is safe-by-default: every result shown
     // can be installed without asking clients to do anything on their end.
     var results = await mgr.SearchAsync(def, q ?? "", limit ?? 30, serverSideOnly ?? true, ct);
