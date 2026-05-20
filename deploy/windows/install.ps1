@@ -20,9 +20,29 @@
 #   $env:GSC_VERSION    — pin a specific tag like v1.0.0 (default: latest)
 
 #Requires -RunAsAdministrator
+# NOTE: #Requires only blocks .ps1 files run directly. When this script is piped through `iex`
+# (the recommended install flow), the directive is treated as a comment and ignored. We do an
+# explicit elevation check below to handle that case correctly.
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference    = 'SilentlyContinue'   # quiet IWR progress bars
+
+# ---- Elevation check (must run before anything that needs Admin) ----
+$isElevated = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isElevated) {
+    Write-Host ""
+    Write-Host "===============================================================" -ForegroundColor Red
+    Write-Host "  This installer must run as Administrator." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Right-click Start -> 'Terminal (Admin)' or 'PowerShell (Admin)'," -ForegroundColor Yellow
+    Write-Host "  then re-run the install command:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host '    iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex' -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "  Why: registering a Windows service (sc.exe create) requires elevation." -ForegroundColor Yellow
+    Write-Host "===============================================================" -ForegroundColor Red
+    return
+}
 
 # ---- Configuration ----
 $repo       = if ($env:GSC_REPO) { $env:GSC_REPO } else { 'tyrus2244/GameServerControl' }
@@ -125,22 +145,55 @@ Expand-Archive -Path $clientZip -DestinationPath $clientDir -Force
 Write-Ok "Client unpacked."
 
 # ---- Register Windows service ----
+# We invoke sc.exe and capture both stdout and exit code. On any failure we surface the actual
+# sc.exe error message rather than letting Get-Service blow up downstream with a useless trace.
 $svcExePath = Join-Path $agentDir 'GameServerControl.Agent.exe'
 $existing   = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+
+function Invoke-Sc {
+    param([string[]]$Args, [string]$Label)
+    $out = & sc.exe @Args 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Label failed (sc.exe exit $LASTEXITCODE): $($out -join ' | ')"
+    }
+    return $out
+}
+
 if ($existing) {
-    # In case the binary path moved — re-point it.
     Write-Step "Refreshing $svcName service"
-    & sc.exe config $svcName binPath= "`"$svcExePath`"" | Out-Null
+    Invoke-Sc @('config', $svcName, 'binPath=', "`"$svcExePath`"") 'sc.exe config' | Out-Null
+    Write-Ok "Service config refreshed."
 } else {
     Write-Step "Registering $svcName Windows service"
-    & sc.exe create $svcName binPath= "`"$svcExePath`"" start= auto DisplayName= "GameServerControl Agent (TK-ECLIPSE)" | Out-Null
-    & sc.exe description $svcName "Self-hosted dashboard for game-server processes (start/stop/backup/update/RCON). github.com/$repo" | Out-Null
+    Invoke-Sc @('create', $svcName,
+        'binPath=', "`"$svcExePath`"",
+        'start=', 'auto',
+        'DisplayName=', 'GameServerControl Agent (TK-ECLIPSE)') 'sc.exe create' | Out-Null
+    # description is non-critical — log a warning instead of failing the whole install.
+    try { Invoke-Sc @('description', $svcName, "Self-hosted dashboard for game-server processes (start/stop/backup/update/RCON). github.com/$repo") 'sc.exe description' | Out-Null }
+    catch { Write-Warn2 "Couldn't set service description: $_" }
+    Write-Ok "Service registered."
 }
+
 Write-Step "Starting $svcName"
-& sc.exe start $svcName | Out-Null
+try { Invoke-Sc @('start', $svcName) 'sc.exe start' | Out-Null }
+catch {
+    # Service might already be Running, or might fail to start because of a config error
+    # in appsettings.json. Surface the actual sc.exe message either way.
+    Write-Warn2 "$_"
+}
 Start-Sleep -Seconds 3
-$status = (Get-Service -Name $svcName).Status
-if ($status -ne 'Running') { Write-Warn2 "Service status: $status (check Windows Event Log)" } else { Write-Ok "Service running." }
+
+# Re-check existence + status. SilentlyContinue here so we can give a clean error message ourselves.
+$svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
+if (-not $svc) {
+    throw "Service '$svcName' is still not registered. The sc.exe create above probably failed. Check that you're running as Administrator (Get-Process powershell shows your PID; right-click PowerShell -> Run as administrator)."
+}
+if ($svc.Status -ne 'Running') {
+    Write-Warn2 "Service registered but not running (status: $($svc.Status)). Check the Application Event Log under source 'GameServerControl' for the boot error."
+} else {
+    Write-Ok "Service running."
+}
 
 # ---- Desktop shortcut ----
 Write-Step "Refreshing desktop shortcut"
