@@ -172,6 +172,10 @@
                                                      Visibility="{Binding IsBusy, Converter={x:Static vm:BoolVisibilityConverter.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Content="❤ TK-ECLIPSE" Style="{StaticResource ActionButton}"
+                                                Command="{Binding DonateCommand}"
+                                                Foreground="{StaticResource AccentBrush}"
+                                                ToolTip="Support the maintainer · opens PayPal.me/TKECLIPSE"/>
                                         <Button Content="✎ Edit"   Style="{StaticResource ActionButton}" Command="{Binding EditCommand}"/>
                                         <Button Content="🗑 Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
                                     </StackPanel>

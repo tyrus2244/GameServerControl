@@ -50,6 +50,10 @@
   .actions button{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-weight:600;cursor:pointer;font-size:13px}
   .actions button:hover{border-color:var(--accent);background:var(--accentDim)}
   .actions button.danger:hover{border-color:var(--accent);background:var(--accent);color:#fff}
+  /* Donate / TK-ECLIPSE button — brand color text on dark bg, hover fills crimson */
+  .actions a.donate{display:inline-flex;align-items:center;background:var(--bg3);color:var(--accent);border:1px solid var(--accentDim);
+                    border-radius:6px;padding:8px 12px;font-weight:700;font-size:13px;text-decoration:none;cursor:pointer}
+  .actions a.donate:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
   .actions button:disabled{opacity:.4;cursor:default;background:var(--bg3);border-color:var(--border)}
 
   .login{max-width:420px;margin:80px auto;background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:24px}
@@ -148,6 +152,9 @@
 <script>
 const $ = sel => document.querySelector(sel);
 const fmt = (s) => s == null ? '' : String(s);
+
+// Donate URL — single source of truth, easy to swap if the handle changes.
+const DONATE_URL = 'https://paypal.me/TKECLIPSE';
 
 let CFG = { url: '', token: '' };
 let SERVERS = [];
@@ -274,6 +281,8 @@ function renderCard(def, st){
         ${hasRcon ? `<button onclick="openPlayers('${esc(def.id)}')">👥 Players</button>` : ''}
         <button onclick="openMods('${esc(def.id)}')">🧩 Mods</button>
         <button onclick="openBackups('${esc(def.id)}')">📦 Backups</button>
+        <a class="donate" href="${DONATE_URL}" target="_blank" rel="noopener noreferrer"
+           title="Support the maintainer · opens PayPal.me/TKECLIPSE">❤ TK-ECLIPSE</a>
       </div>
     </div>`;
 }

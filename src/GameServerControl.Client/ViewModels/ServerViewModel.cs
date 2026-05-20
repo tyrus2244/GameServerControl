@@ -72,6 +72,25 @@ public sealed partial class ServerViewModel : ObservableObject
     [RelayCommand]
     private void Stats() => _cb.Stats?.Invoke(this);
 
+    // ---- TK-ECLIPSE donate button ----
+    // Open the maintainer's PayPal.me URL in the default browser. URL lives here as a single
+    // named constant so it's a one-line edit to point at a different handle.
+    public const string DonateUrl = "https://paypal.me/TKECLIPSE";
+
+    [RelayCommand]
+    private void Donate()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = DonateUrl,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) { _toast($"Could not open donate link: {ex.Message}"); }
+    }
+
     public bool HasRcon => Def.RconPort is > 0;
     public bool HasScheduledTask => !string.IsNullOrWhiteSpace(Def.ScheduledTaskName);
     public bool HasLogPath => !string.IsNullOrWhiteSpace(Def.LogPathInGuest);
