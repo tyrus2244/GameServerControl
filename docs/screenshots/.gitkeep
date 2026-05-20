@@ -1,0 +1,9 @@
+# Drop the 5 PNGs here per docs/SCREENSHOTS.md:
+#   dashboard.png
+#   create-wizard.png
+#   mods-window.png
+#   players.png
+#   web-ui.png
+#
+# Once any of those land, the README gallery + all promotion posts that reference
+# raw.githubusercontent.com URLs will start showing them. No new release required.

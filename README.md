@@ -1,6 +1,40 @@
 # GameServerControl
 
-> Self-hosted control panel for Steam dedicated game servers running on a Windows host. Manage Windrose, Satisfactory, Valheim, Palworld, ARK, Rust, and more from a native dark-themed WPF UI — start, stop, backup, update, edit config, and apply live changes over [Tailscale](https://tailscale.com) from anywhere.
+[![Release](https://img.shields.io/github/v/release/tyrus2244/GameServerControl?color=e0294a&label=release)](https://github.com/tyrus2244/GameServerControl/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-58a6ff.svg)](LICENSE)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-3fb950)](https://github.com/tyrus2244/GameServerControl/releases/latest)
+[![Donate](https://img.shields.io/badge/❤_donate-PayPal-e0294a)](https://paypal.me/TKECLIPSE)
+
+> **Self-hosted control panel for Steam dedicated game servers.** Manage Valheim, Satisfactory, Palworld, ARK, Rust, 7DTD, Terraria, Don't Starve Together, Project Zomboid (and more) from a single dashboard. One-click install via SteamCMD. Server-side mod browser. Live RCON. Backups + restore. Discord webhook alerts. Multi-host federation. MIT-licensed. Built by **TK-ECLIPSE**.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png"     alt="Dashboard with multiple game servers" width="800"/>
+  <br/><em>Dashboard — every server on every machine on one screen, with live status, CPU/RAM, and invite codes.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/create-wizard.png" alt="One-click Create Server wizard"        width="800"/>
+  <br/><em>🚀 Create Server — pick a game, choose where, click Install. SteamCMD does the rest.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/mods-window.png"   alt="Built-in mod browser"                  width="800"/>
+  <br/><em>Mods — Thunderstore, ficsit.app, Workshop, and curated lists, all in-app with dep resolution + auto-update.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/players.png"       alt="Live RCON player management"           width="800"/>
+  <br/><em>Players — live RCON list with kick/ban/broadcast. Auto-refreshes every 10s.</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/web-ui.png"        alt="Responsive web UI"                     width="800"/>
+  <br/><em>Browser dashboard — works on any device. Drawer-based mobile-friendly UI with the same feature set.</em>
+</p>
+
+---
 
 ```
 ┌────────── your laptop / phone (over Tailscale) ──────────┐
