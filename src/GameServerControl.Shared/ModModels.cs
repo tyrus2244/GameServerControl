@@ -37,7 +37,8 @@ public sealed record ModSearchResult(
     long Downloads,
     int RatingScore,
     string[] Categories,
-    bool Deprecated);
+    bool Deprecated,
+    bool ServerSideOnly);     // true when the mod's marketplace metadata says clients don't need it
 
 public sealed record ModSearchResponse(
     ModSearchResult[] Results,

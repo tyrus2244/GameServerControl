@@ -37,8 +37,8 @@ public sealed class ValheimBepInExModManager : IModManager
 
     public string? MarketplaceSource(ServerDef def) => "valheim.thunderstore.io";
 
-    public Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, CancellationToken ct)
-        => _thunderstore.SearchAsync("valheim", query, limit, ct);
+    public Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, bool serverSideOnly, CancellationToken ct)
+        => _thunderstore.SearchAsync("valheim", query, limit, serverSideOnly, ct);
 
     public bool Supports(ServerDef def)
     {

@@ -280,7 +280,7 @@ api.MapGet("/servers/{id}/mods", async (string id, ServerRegistry reg, GameServe
     return Results.Ok(new ModListResponse(list, true, null, mgr.ModsFolder(def)));
 });
 
-api.MapGet("/servers/{id}/mods/search", async (string id, string? q, int? limit, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
+api.MapGet("/servers/{id}/mods/search", async (string id, string? q, int? limit, bool? serverSideOnly, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
 {
     var def = reg.Get(id);
     if (def is null) return Results.NotFound();
@@ -288,7 +288,9 @@ api.MapGet("/servers/{id}/mods/search", async (string id, string? q, int? limit,
     if (mgr is null)
         return Results.Ok(new ModSearchResponse(Array.Empty<ModSearchResult>(), false, null,
             "No mod marketplace registered for this game."));
-    var results = await mgr.SearchAsync(def, q ?? "", limit ?? 30, ct);
+    // Default to server-side-only so the UI is safe-by-default: every result shown
+    // can be installed without asking clients to do anything on their end.
+    var results = await mgr.SearchAsync(def, q ?? "", limit ?? 30, serverSideOnly ?? true, ct);
     return Results.Ok(new ModSearchResponse(results, true, mgr.MarketplaceSource(def), null));
 });
 

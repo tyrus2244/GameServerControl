@@ -41,7 +41,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Search box -->
-                    <Grid Grid.Row="0" Margin="0,4,0,8">
+                    <Grid Grid.Row="0" Margin="0,4,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -52,7 +52,13 @@
                                  KeyDown="SearchBox_KeyDown"/>
                         <Button Grid.Column="1" Content="Search" Style="{StaticResource ActionButton}" Click="Search_Click" Margin="8,0,0,0"/>
                     </Grid>
-                    <TextBlock Grid.Row="1" x:Name="SearchSourceText" FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,6"/>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                        <CheckBox x:Name="ShowAllCheckbox" Content="Also show mods that require client install"
+                                  Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"
+                                  Checked="ShowAllChanged" Unchecked="ShowAllChanged"
+                                  ToolTip="Off (default): only show mods that work without players installing anything. On: include client-required mods, marked with a warning."/>
+                        <TextBlock x:Name="SearchSourceText" FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="16,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
 
                     <!-- Search results -->
                     <Border Grid.Row="2" Background="{StaticResource BgBrush0}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
@@ -83,6 +89,14 @@
                                                             <TextBlock Text="{Binding Owner, StringFormat=' by {0}'}" FontSize="12" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="6,2,0,0"/>
                                                             <Border Margin="8,2,0,0" Padding="6,1" CornerRadius="3" Background="{StaticResource BgBrush2}">
                                                                 <TextBlock Text="{Binding Version, StringFormat=v{0}}" FontSize="11" Foreground="{StaticResource TextDimBrush}"/>
+                                                            </Border>
+                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#264a26"
+                                                                    Visibility="{Binding ServerSideOnly, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
+                                                                <TextBlock Text="✓ server-side" FontSize="11" Foreground="#9adf9a"/>
+                                                            </Border>
+                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#553311"
+                                                                    Visibility="{Binding ClientRequired, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
+                                                                <TextBlock Text="⚠ needs client install" FontSize="11" Foreground="#ffaa66"/>
                                                             </Border>
                                                         </StackPanel>
                                                         <TextBlock Text="{Binding DescriptionShort}" FontSize="12" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="36"/>

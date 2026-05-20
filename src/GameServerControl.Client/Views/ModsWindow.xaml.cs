@@ -96,18 +96,23 @@ public partial class ModsWindow : Window
     }
 
     private async void Search_Click(object sender, RoutedEventArgs e) => await SearchAsync(SearchBox.Text);
+    private async void ShowAllChanged(object sender, RoutedEventArgs e) => await SearchAsync(SearchBox.Text);
 
     private async Task SearchAsync(string query)
     {
         SearchRows.Clear();
         SearchEmptyText.Visibility = Visibility.Collapsed;
-        StatusText.Text = string.IsNullOrEmpty(query) ? "Loading popular mods…" : $"Searching for \"{query}\"…";
+        var serverSideOnly = ShowAllCheckbox?.IsChecked != true; // unchecked = filter on
+        var modeLabel = serverSideOnly ? "server-side only" : "all mods";
+        StatusText.Text = string.IsNullOrEmpty(query)
+            ? $"Loading popular mods ({modeLabel})…"
+            : $"Searching for \"{query}\" ({modeLabel})…";
         try
         {
-            var resp = await _client.SearchModsAsync(_serverId, query, limit: 30);
+            var resp = await _client.SearchModsAsync(_serverId, query, limit: 30, serverSideOnly: serverSideOnly);
             SearchSourceText.Text = resp.Source is null
                 ? (resp.UnsupportedReason ?? "")
-                : $"Source: {resp.Source} · {resp.Results.Length} result(s) shown (top by downloads)";
+                : $"Source: {resp.Source} · {resp.Results.Length} {modeLabel} (top by downloads)";
             if (!resp.Supported)
             {
                 SearchEmptyText.Text = resp.UnsupportedReason ?? "Search not available for this server.";
@@ -116,8 +121,18 @@ public partial class ModsWindow : Window
                 return;
             }
             foreach (var r in resp.Results) SearchRows.Add(new SearchRowVm(r));
-            SearchEmptyText.Visibility = resp.Results.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-            StatusText.Text = $"{resp.Results.Length} mod(s) found. Click Install on any row to add it to this server.";
+            if (resp.Results.Length == 0)
+            {
+                SearchEmptyText.Text = serverSideOnly
+                    ? "No server-side-only mods match. Try a different query, or tick 'Also show mods that require client install'."
+                    : "No results.";
+                SearchEmptyText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                SearchEmptyText.Visibility = Visibility.Collapsed;
+            }
+            StatusText.Text = $"{resp.Results.Length} mod(s) shown. Click Install on any server-side mod to add it without any client setup.";
         }
         catch (Exception ex)
         {
@@ -187,6 +202,8 @@ public partial class ModsWindow : Window
             DownloadUrl = r.DownloadUrl;
             PackageUrl = r.PackageUrl;
             RatingScore = r.RatingScore;
+            ServerSideOnly = r.ServerSideOnly;
+            ClientRequired = !r.ServerSideOnly; // for the warning badge binding
             // Truncate description for the card
             var d = (r.Description ?? "").Replace("\n", " ").Trim();
             DescriptionShort = d.Length > 180 ? d[..180] + "…" : d;
@@ -208,5 +225,7 @@ public partial class ModsWindow : Window
         public string DownloadsLabel { get; }
         public int RatingScore { get; }
         public string CategoriesLabel { get; }
+        public bool ServerSideOnly { get; }
+        public bool ClientRequired { get; }
     }
 }

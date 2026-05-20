@@ -35,8 +35,13 @@ public sealed class ThunderstoreClient
     /// <summary>
     /// Searches the catalog for a community. <paramref name="community"/> is the
     /// Thunderstore subdomain (e.g. "valheim" for valheim.thunderstore.io).
+    ///
+    /// When <paramref name="serverSideOnly"/> is true (the default), only mods the
+    /// marketplace explicitly categorizes as "Server-side" come back — meaning the
+    /// mod runs entirely on the server and players don't need to install anything.
+    /// Set false to also show client-required mods (UI flag).
     /// </summary>
-    public async Task<ModSearchResult[]> SearchAsync(string community, string query, int limit, CancellationToken ct)
+    public async Task<ModSearchResult[]> SearchAsync(string community, string query, int limit, bool serverSideOnly, CancellationToken ct)
     {
         var catalog = await GetCatalogAsync(community, ct);
         if (catalog is null) return Array.Empty<ModSearchResult>();
@@ -55,11 +60,34 @@ public sealed class ThunderstoreClient
         if (q.Length > 0 && !q.Contains("deprecated", StringComparison.OrdinalIgnoreCase))
             matches = matches.Where(p => !p.IsDeprecated);
 
+        if (serverSideOnly)
+            matches = matches.Where(IsServerSideOnly);
+
         return matches
             .OrderByDescending(p => p.Versions?.FirstOrDefault()?.Downloads ?? 0)
             .Take(Math.Clamp(limit, 1, 200))
             .Select(ToResult)
             .ToArray();
+    }
+
+    /// <summary>
+    /// A package counts as server-side-only when Thunderstore tags it with the
+    /// "Server-side" category. Authors who maintain that tag explicitly state the
+    /// mod works without client install. We choose to be conservative here — if the
+    /// tag is missing, we exclude the mod. The UI's "Show all mods" toggle lets users
+    /// see everything anyway with a clear warning.
+    /// </summary>
+    private static bool IsServerSideOnly(ThunderstorePackage p)
+    {
+        var cats = p.Categories ?? Array.Empty<string>();
+        foreach (var c in cats)
+        {
+            // Normalize: "Server-side", "Server Side", "server_side", "Server-Side Only", etc.
+            var n = c.Replace("-", "").Replace("_", "").Replace(" ", "")
+                     .ToLowerInvariant();
+            if (n.Contains("serverside")) return true;
+        }
+        return false;
     }
 
     private static bool Contains(string? haystack, string needle) =>
@@ -79,7 +107,8 @@ public sealed class ThunderstoreClient
             Downloads: v?.Downloads ?? 0,
             RatingScore: p.RatingScore,
             Categories: p.Categories ?? Array.Empty<string>(),
-            Deprecated: p.IsDeprecated);
+            Deprecated: p.IsDeprecated,
+            ServerSideOnly: IsServerSideOnly(p));
     }
 
     private async Task<ThunderstorePackage[]?> GetCatalogAsync(string community, CancellationToken ct)

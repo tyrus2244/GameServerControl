@@ -79,9 +79,9 @@ public sealed class AgentClient
         return r.IsSuccessStatusCode;
     }
 
-    public async Task<ModSearchResponse> SearchModsAsync(string serverId, string query, int limit = 30, CancellationToken ct = default)
+    public async Task<ModSearchResponse> SearchModsAsync(string serverId, string query, int limit = 30, bool serverSideOnly = true, CancellationToken ct = default)
     {
-        var u = $"/api/servers/{serverId}/mods/search?q={Uri.EscapeDataString(query)}&limit={limit}";
+        var u = $"/api/servers/{serverId}/mods/search?q={Uri.EscapeDataString(query)}&limit={limit}&serverSideOnly={(serverSideOnly ? "true" : "false")}";
         var r = await _http.GetAsync(u, ct);
         r.EnsureSuccessStatusCode();
         var s = await r.Content.ReadAsStringAsync(ct);

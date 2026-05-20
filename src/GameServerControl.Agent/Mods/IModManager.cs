@@ -27,7 +27,7 @@ public interface IModManager
     /// Implementations may return an empty array + <see cref="MarketplaceSource"/>=null when search isn't
     /// available for this game.
     /// </summary>
-    Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, CancellationToken ct);
+    Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, bool serverSideOnly, CancellationToken ct);
     string? MarketplaceSource(ServerDef def);
 }
 
