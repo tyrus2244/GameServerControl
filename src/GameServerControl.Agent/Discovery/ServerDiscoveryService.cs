@@ -148,7 +148,7 @@ public sealed class ServerDiscoveryService
             };
         }
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        return new[]
+        var paths = new List<string>
         {
             Path.Combine(home, "gameservers"),
             Path.Combine(home, "GameServers"),
@@ -156,6 +156,15 @@ public sealed class ServerDiscoveryService
             "/opt/gameservers",
             "/var/lib/gameservers",
         };
+        // macOS conventions — /usr/local/var is the Homebrew-friendly spot for variable data,
+        // and ~/Applications/GameServers covers users who keep dedicated servers in their home tree.
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            paths.Add(Path.Combine(home, "Applications", "GameServers"));
+            paths.Add("/usr/local/var/gameservers");
+            paths.Add("/opt/homebrew/var/gameservers");
+        }
+        return paths;
     }
 
     private static string NormalizePath(string p)

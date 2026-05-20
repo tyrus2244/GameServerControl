@@ -11,9 +11,10 @@ namespace GameServerControl.Agent.Discovery;
 /// Cross-platform:
 ///   - On Windows: probes registry (HKLM\WOW6432Node\Valve\Steam, HKCU\Valve\Steam) + common paths.
 ///   - On Linux:   probes ~/.steam/steam, ~/.local/share/Steam, /usr/local/games/steam, etc.
+///   - On macOS:   probes ~/Library/Application Support/Steam.
 ///
-/// The VDF (libraryfolders.vdf) and ACF (appmanifest_*.acf) formats are identical on both
-/// platforms, so once we have a Steam install path the rest is shared code.
+/// The VDF (libraryfolders.vdf) and ACF (appmanifest_*.acf) formats are identical on every
+/// platform, so once we have a Steam install path the rest is shared code.
 /// </summary>
 public sealed class SteamLibraryReader
 {
@@ -25,9 +26,25 @@ public sealed class SteamLibraryReader
     /// </summary>
     public string? FindSteamInstallPath()
     {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? FindSteamOnWindows()
-            : FindSteamOnLinux();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return FindSteamOnWindows();
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))     return FindSteamOnMacOS();
+        return FindSteamOnLinux();
+    }
+
+    private string? FindSteamOnMacOS()
+    {
+        // The Mac Steam client installs under ~/Library/Application Support/Steam.
+        // Game-server-only Macs are rare, but auto-discovery still helps for the developer
+        // running a personal dedicated server on their iMac.
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var candidates = new[]
+        {
+            Path.Combine(home, "Library", "Application Support", "Steam"),
+            "/Applications/Steam.app/Contents/Resources",
+        };
+        foreach (var p in candidates)
+            if (Directory.Exists(p)) return p;
+        return null;
     }
 
     [SupportedOSPlatform("windows")]

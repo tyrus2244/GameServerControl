@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchAgent for GameServerControl on macOS.
+  Installed to ~/Library/LaunchAgents/com.tk-eclipse.gameservercontrol-agent.plist
+  by install-from-release.sh. Runs in the user's session — no sudo required.
+
+  Notes:
+   - {{INSTALL_DIR}} and {{LOG_DIR}} are placeholders the installer substitutes at deploy time.
+   - KeepAlive = true means launchd restarts the agent if it crashes.
+   - RunAtLoad = true means launchd starts it as soon as the plist is loaded (i.e. at login).
+   - StandardOut/ErrorPath give you a tail-able file when systemd-style journalctl isn't available.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tk-eclipse.gameservercontrol-agent</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{INSTALL_DIR}}/GameServerControl.Agent</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{INSTALL_DIR}}</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>DOTNET_ROOT</key>
+        <string>{{DOTNET_ROOT}}</string>
+        <key>PATH</key>
+        <string>{{DOTNET_ROOT}}:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>{{LOG_DIR}}/agent.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>{{LOG_DIR}}/agent.err.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

@@ -100,15 +100,20 @@ LICENSE                       MIT
 iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
 ```
 
-**Linux** (any modern distro):
+**Linux** (any modern distro with systemd):
 ```bash
 curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/linux/install-from-release.sh | sudo bash
 ```
 
-Both scripts:
+**macOS** (Apple Silicon or Intel — no sudo needed):
+```bash
+curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/macos/install-from-release.sh | bash
+```
+
+All three scripts:
 - Detect and install the .NET 8 runtime if missing.
 - Download the latest GitHub Release asset (no source build needed).
-- Stop/replace/start the agent service.
+- Stop/replace/start the agent (Windows service / systemd unit / LaunchAgent).
 - Preserve `appsettings.json`, `servers.json`, `tokens.json` across upgrades.
 - Print the auto-generated API token on first install.
 - **Re-run the same command to update** to the latest release.
@@ -119,27 +124,27 @@ The agent itself also checks GitHub once a day and shows an in-app banner when a
 
 ### Supported hosts — feature parity
 
-|                                         | Windows | Linux |
-|-----------------------------------------|---------|-------|
-| **Bare-metal hosting** (start/stop/restart/backup/update) | ✅ | ✅ |
-| **Hyper-V VM hosting**                  | ✅ | ❌ (Hyper-V doesn't exist on Linux) |
-| **Auto-restart of agent on crash**      | ✅ (Windows Service) | ✅ (systemd `Restart=on-failure`) |
-| **Auto-start of game servers on boot**  | ✅ (built-in Task Scheduler wrapper) | ✅ (user-written systemd unit — recipe in README) |
-| **Live status + log tail** (SignalR)    | ✅ | ✅ |
-| **RCON** (Source-engine + Palworld)     | ✅ | ✅ |
-| **Satisfactory Admin API** (AGS, server identity) | ✅ | ✅ |
-| **Per-game curated config editors**     | ✅ (4 games × dozens of fields) | ✅ (identical) |
-| **Auto-discovered config fields**       | ✅ (Palworld + Satisfactory) | ✅ (identical) |
-| **🔍 Auto-discover installed servers**  | ✅ (registry + Steam library + C:\GameServers) | ✅ (~/.steam, ~/.local/share/Steam, Flatpak, ~/gameservers, /srv, /opt) |
-| **File-zip backups**                    | ✅ | ✅ |
-| **Hyper-V checkpoint backups**          | ✅ | ❌ (Hyper-V only) |
-| **SteamCMD updates** (one-click)        | ✅ (uses `steamcmd.exe` on PATH) | ✅ (uses `steamcmd` on PATH or `Agent:SteamCmdPath`) |
-| **First-run API token auto-generation** | ✅ | ✅ |
-| **Audit log of mutations**              | ✅ | ✅ |
-| **HTTPS with self-signed cert**         | ✅ | ✅ |
-| **Web UI**                              | ✅ | ✅ |
-| **Native WPF client**                   | ✅ | ❌ (WPF is Windows-only — use web UI or remote Windows client over Tailscale) |
-| **Scheduled maintenance** (daily restart / weekly update / hourly backup) | ✅ (Windows Task Scheduler) | ⚠️ (manual — recipe with systemd timers below) |
+|                                         | Windows | Linux | macOS |
+|-----------------------------------------|---------|-------|-------|
+| **Bare-metal hosting** (start/stop/restart/backup/update) | ✅ | ✅ | ✅ |
+| **Hyper-V VM hosting**                  | ✅ | ❌ (Hyper-V doesn't exist on Linux) | ❌ (Hyper-V is Windows-only) |
+| **Auto-restart of agent on crash**      | ✅ (Windows Service) | ✅ (systemd `Restart=on-failure`) | ✅ (LaunchAgent `KeepAlive=true`) |
+| **Auto-start of game servers on boot**  | ✅ (built-in Task Scheduler wrapper) | ✅ (user-written systemd unit — recipe below) | ⚠️ (write your own LaunchAgent per server; agent doesn't manage them) |
+| **Live status + log tail** (SignalR)    | ✅ | ✅ | ✅ |
+| **RCON** (Source-engine + Palworld)     | ✅ | ✅ | ✅ |
+| **Satisfactory Admin API** (AGS, server identity) | ✅ | ✅ | ✅ |
+| **Per-game curated config editors**     | ✅ (4 games × dozens of fields) | ✅ (identical) | ✅ (identical) |
+| **Auto-discovered config fields**       | ✅ (Palworld + Satisfactory) | ✅ (identical) | ✅ (identical) |
+| **🔍 Auto-discover installed servers**  | ✅ (registry + Steam library + C:\GameServers) | ✅ (~/.steam, ~/.local/share/Steam, Flatpak, ~/gameservers, /srv, /opt) | ✅ (~/Library/Application Support/Steam, ~/Applications/GameServers, /usr/local/var) |
+| **File-zip backups**                    | ✅ | ✅ | ✅ |
+| **Hyper-V checkpoint backups**          | ✅ | ❌ (Hyper-V only) | ❌ (Hyper-V only) |
+| **SteamCMD updates** (one-click)        | ✅ (uses `steamcmd.exe` on PATH) | ✅ (uses `steamcmd` on PATH or `Agent:SteamCmdPath`) | ✅ (uses `steamcmd` on PATH or `Agent:SteamCmdPath`) |
+| **First-run API token auto-generation** | ✅ | ✅ | ✅ |
+| **Audit log of mutations**              | ✅ | ✅ | ✅ |
+| **HTTPS with self-signed cert**         | ✅ | ✅ | ✅ |
+| **Web UI**                              | ✅ | ✅ | ✅ |
+| **Native WPF client**                   | ✅ | ❌ (WPF is Windows-only — use web UI or remote Windows client over Tailscale) | ❌ (WPF is Windows-only — use web UI in Safari/Chrome or a Windows client over Tailscale) |
+| **Scheduled maintenance** (daily restart / weekly update / hourly backup) | ✅ (Windows Task Scheduler) | ⚠️ (manual — recipe with systemd timers below) | ⚠️ (manual — use `launchctl` calendar intervals or `cron`) |
 
 ---
 
@@ -256,6 +261,66 @@ The agent prints its generated API token on first run. Use that with the web UI 
   WantedBy=timers.target
   ```
   Then `sudo systemctl enable --now gsc-windrose-restart.timer`. Same pattern for hourly backups (`/backup`) and weekly updates (`/update`).
+
+---
+
+### macOS install
+
+#### Requirements
+- macOS 12 Monterey or later (Apple Silicon **or** Intel — the installer auto-picks the right binary).
+- The installer will fetch the .NET 8 runtime via Microsoft's `dotnet-install.sh` if you don't have it.
+
+#### One-shot install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/macos/install-from-release.sh | bash
+```
+
+That script:
+1. Detects `arm64` vs `x86_64` via `uname -m` and downloads the matching tarball.
+2. Installs the .NET 8 ASP.NET runtime under `~/.dotnet` if missing (no sudo needed).
+3. Unpacks the agent into `~/Library/Application Support/GameServerControl/Agent`.
+4. Installs a **LaunchAgent** plist at `~/Library/LaunchAgents/com.tk-eclipse.gameservercontrol-agent.plist`.
+5. Loads it (`launchctl load -w …`) so it starts now and on every login.
+6. Tails the log long enough to capture and print the auto-generated API token.
+
+After install:
+- Status: `launchctl list | grep gameservercontrol`
+- Logs:   `tail -f ~/Library/Logs/GameServerControl/agent.out.log`
+- Errors: `tail -f ~/Library/Logs/GameServerControl/agent.err.log`
+- Web UI: `http://<this-mac>:5099/`
+- Config: `~/Library/Application Support/GameServerControl/Agent/appsettings.json`
+- Unload: `launchctl unload ~/Library/LaunchAgents/com.tk-eclipse.gameservercontrol-agent.plist`
+
+#### macOS notes
+
+- **User-scoped, not root-scoped.** The agent runs as the LaunchAgent (`~/Library/LaunchAgents`),
+  not a LaunchDaemon. This means no sudo, but it also means the agent only runs while a user
+  is logged in. For headless dedicated-server Macs, **enable auto-login** in
+  *System Settings → Users & Groups → Automatically log in as…* and the agent comes up on every boot.
+- **VM hosting mode is unsupported** (no Hyper-V). Use `"HostingMode": "BareMetal"`.
+- **Scheduled maintenance** (the `MaintenanceScheduler` API) is Windows-only. For a daily restart
+  on macOS, write a LaunchAgent with `StartCalendarInterval` that hits the agent's `/restart` endpoint:
+  ```xml
+  <!-- ~/Library/LaunchAgents/com.tk-eclipse.gsc-restart.plist -->
+  <plist version="1.0"><dict>
+    <key>Label</key>     <string>com.tk-eclipse.gsc-restart</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/usr/bin/curl</string>
+      <string>-fsS</string><string>-X</string><string>POST</string>
+      <string>-H</string><string>Authorization: Bearer YOUR-TOKEN</string>
+      <string>http://127.0.0.1:5099/api/servers/windrose-main/restart</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict><key>Hour</key><integer>4</integer><key>Minute</key><integer>0</integer></dict>
+  </dict></plist>
+  ```
+  Then `launchctl load -w ~/Library/LaunchAgents/com.tk-eclipse.gsc-restart.plist`.
+- **Game-server autostart** is also your job per server. The simplest pattern is one LaunchAgent
+  per server, structured like the agent's own plist (`KeepAlive=true`, `RunAtLoad=true`).
+- **Auto-discover** scans `~/Library/Application Support/Steam`, `/Applications/Steam.app`, and a
+  few common server-install spots under `~/Applications/GameServers` and `/usr/local/var`.
 
 ### Run the client (Windows only)
 

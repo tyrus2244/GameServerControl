@@ -94,10 +94,61 @@ jobs:
           path: GameServerControl-Agent-linux.tar.gz
           if-no-files-found: error
 
+  build-macos:
+    name: Build macOS artifacts (arm64 + x64)
+    # macos-latest is Apple Silicon since GitHub's 2024 migration, but `dotnet publish` can
+    # cross-compile to either RID, so we publish both off the same runner.
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore src/GameServerControl.Agent
+
+      - name: Publish agent (osx-arm64)
+        run: dotnet publish src/GameServerControl.Agent -c Release -r osx-arm64 --self-contained false -o publish/Agent-macos-arm64
+
+      - name: Publish agent (osx-x64)
+        run: dotnet publish src/GameServerControl.Agent -c Release -r osx-x64 --self-contained false -o publish/Agent-macos-x64
+
+      - name: Stage deploy artifacts (arm64)
+        run: |
+          cp deploy/macos/com.tk-eclipse.gameservercontrol-agent.plist publish/Agent-macos-arm64/
+          cp deploy/macos/install-from-release.sh                       publish/Agent-macos-arm64/
+          chmod +x publish/Agent-macos-arm64/install-from-release.sh
+          chmod +x publish/Agent-macos-arm64/GameServerControl.Agent || true
+
+      - name: Stage deploy artifacts (x64)
+        run: |
+          cp deploy/macos/com.tk-eclipse.gameservercontrol-agent.plist publish/Agent-macos-x64/
+          cp deploy/macos/install-from-release.sh                       publish/Agent-macos-x64/
+          chmod +x publish/Agent-macos-x64/install-from-release.sh
+          chmod +x publish/Agent-macos-x64/GameServerControl.Agent || true
+
+      - name: Tarball both arches
+        run: |
+          tar -czf GameServerControl-Agent-macos-arm64.tar.gz -C publish/Agent-macos-arm64 .
+          tar -czf GameServerControl-Agent-macos-x64.tar.gz   -C publish/Agent-macos-x64 .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-tars
+          path: |
+            GameServerControl-Agent-macos-arm64.tar.gz
+            GameServerControl-Agent-macos-x64.tar.gz
+          if-no-files-found: error
+
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-macos]
     steps:
       - name: Checkout
         uses: actions/checkout@v4   # for CHANGELOG + scripts
@@ -112,10 +163,16 @@ jobs:
         with:
           name: linux-tar
 
+      - name: Download macOS tarballs
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-tars
+
       - name: Stage installer scripts as release assets
         run: |
-          cp deploy/windows/install.ps1 GameServerControl-Install-Windows.ps1 || echo "(installer script will be added in this PR)"
-          cp deploy/linux/install-from-release.sh GameServerControl-Install-Linux.sh || echo "(installer script will be added in this PR)"
+          cp deploy/windows/install.ps1            GameServerControl-Install-Windows.ps1
+          cp deploy/linux/install-from-release.sh  GameServerControl-Install-Linux.sh
+          cp deploy/macos/install-from-release.sh  GameServerControl-Install-macOS.sh
 
       - name: Determine tag
         id: tag
@@ -138,8 +195,11 @@ jobs:
             GameServerControl-Agent-windows.zip
             GameServerControl-Client-windows.zip
             GameServerControl-Agent-linux.tar.gz
+            GameServerControl-Agent-macos-arm64.tar.gz
+            GameServerControl-Agent-macos-x64.tar.gz
             GameServerControl-Install-Windows.ps1
             GameServerControl-Install-Linux.sh
+            GameServerControl-Install-macOS.sh
           body: |
             ## TK-ECLIPSE GameServerControl ${{ steps.tag.outputs.tag }}
 
@@ -150,9 +210,14 @@ jobs:
             iwr https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/windows/install.ps1 | iex
             ```
 
-            **Linux** (any modern distro):
+            **Linux** (any modern distro with systemd):
             ```bash
             curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/linux/install-from-release.sh | sudo bash
+            ```
+
+            **macOS** (Apple Silicon or Intel — no sudo needed):
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/macos/install-from-release.sh | bash
             ```
 
             ### Manual install
