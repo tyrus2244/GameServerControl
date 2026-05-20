@@ -95,9 +95,14 @@ LICENSE                       MIT
 
 ### One-line install (recommended)
 
-**Windows** (PowerShell as Administrator):
+**Windows — full install** (agent + client, PowerShell as Administrator):
 ```powershell
 iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
+```
+
+**Windows — client only** (just the dashboard for controlling a remote agent, no Admin needed):
+```powershell
+iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install-client.ps1 | iex
 ```
 
 **Linux** (any modern distro with systemd):
