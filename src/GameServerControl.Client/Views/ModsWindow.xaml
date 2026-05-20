@@ -90,13 +90,15 @@
                                                             <Border Margin="8,2,0,0" Padding="6,1" CornerRadius="3" Background="{StaticResource BgBrush2}">
                                                                 <TextBlock Text="{Binding Version, StringFormat=v{0}}" FontSize="11" Foreground="{StaticResource TextDimBrush}"/>
                                                             </Border>
-                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#264a26"
+                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#3D1A20"
+                                                                    BorderBrush="#7A0E18" BorderThickness="1"
                                                                     Visibility="{Binding ServerSideOnly, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
-                                                                <TextBlock Text="✓ server-side" FontSize="11" Foreground="#9adf9a"/>
+                                                                <TextBlock Text="✓ server-side" FontSize="11" Foreground="#FF6B3D"/>
                                                             </Border>
-                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#553311"
+                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#4A2A0D"
+                                                                    BorderBrush="#D29922" BorderThickness="1"
                                                                     Visibility="{Binding ClientRequired, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
-                                                                <TextBlock Text="⚠ needs client install" FontSize="11" Foreground="#ffaa66"/>
+                                                                <TextBlock Text="⚠ needs client install" FontSize="11" Foreground="#D29922"/>
                                                             </Border>
                                                         </StackPanel>
                                                         <TextBlock Text="{Binding DescriptionShort}" FontSize="12" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="36"/>

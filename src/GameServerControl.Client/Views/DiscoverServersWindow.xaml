@@ -50,8 +50,8 @@
                                                 <TextBlock Text="{Binding Source}" FontSize="11" Foreground="{StaticResource TextDimBrush}"/>
                                             </Border>
                                             <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3"
-                                                    Background="#553311" Visibility="{Binding AlreadyConfigured, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
-                                                <TextBlock Text="already added" FontSize="11" Foreground="#ffaa66"/>
+                                                    Background="#4A2A0D" Visibility="{Binding AlreadyConfigured, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
+                                                <TextBlock Text="already added" FontSize="11" Foreground="#D29922"/>
                                             </Border>
                                         </StackPanel>
                                         <TextBlock Text="{Binding InstallPath}" FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>

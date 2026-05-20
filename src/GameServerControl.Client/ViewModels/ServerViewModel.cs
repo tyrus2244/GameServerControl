@@ -192,13 +192,15 @@ public sealed partial class ServerViewModel : ObservableObject
         _ => "GAME ?"
     };
 
-    public string VmBadgeColor => VmState == VmState.Running ? "#3FFF8E" :
-        VmState == VmState.Off ? "#FF5C6A" :
-        VmState == VmState.Unknown ? "#6F8B85" : "#66D9FF";
+    // Matched to Dark.xaml: Good (powered) = warm orange-red, Bad (offline) = desat grey-red,
+    // Unknown = muted text-dim, transitional = pale rose info color.
+    public string VmBadgeColor => VmState == VmState.Running ? "#FF6B3D" :
+        VmState == VmState.Off ? "#6F575A" :
+        VmState == VmState.Unknown ? "#8A6B70" : "#E5B0B4";
 
-    public string ProcBadgeColor => ProcessState == ProcessState.Running ? "#3FFF8E" :
-        ProcessState == ProcessState.NotRunning ? "#FF5C6A" :
-        ProcessState == ProcessState.Unknown ? "#6F8B85" : "#66D9FF";
+    public string ProcBadgeColor => ProcessState == ProcessState.Running ? "#FF6B3D" :
+        ProcessState == ProcessState.NotRunning ? "#6F575A" :
+        ProcessState == ProcessState.Unknown ? "#8A6B70" : "#E5B0B4";
 
     public void ApplyStatus(ServerStatus s)
     {

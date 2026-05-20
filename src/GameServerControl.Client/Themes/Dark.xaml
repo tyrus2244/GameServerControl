@@ -2,20 +2,24 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!-- Palette — matched to the logo: neon green power symbol + cyan server bars on dark teal -->
-    <Color x:Key="Bg0">#FF050A0E</Color>
-    <Color x:Key="Bg1">#FF0D1B23</Color>
-    <Color x:Key="Bg2">#FF142730</Color>
-    <Color x:Key="Bg3">#FF1B3340</Color>
-    <Color x:Key="Border">#FF2A3D47</Color>
-    <Color x:Key="Text">#FFDCEFEA</Color>
-    <Color x:Key="TextDim">#FF6F8B85</Color>
-    <Color x:Key="Accent">#FF3FFF8E</Color>
-    <Color x:Key="AccentDim">#FF176B41</Color>
-    <Color x:Key="Good">#FF3FFF8E</Color>
-    <Color x:Key="Bad">#FFFF5C6A</Color>
+    <!-- Palette — matched to the TK-ECLIPSE logo: red play-mark on near-black with red bevel. -->
+    <!-- Backgrounds get a slight red-warm tint so the whole app feels of-a-piece with the icon. -->
+    <Color x:Key="Bg0">#FF0A0405</Color>   <!-- deepest black (page bg) -->
+    <Color x:Key="Bg1">#FF15090B</Color>   <!-- card / panel bg -->
+    <Color x:Key="Bg2">#FF1C1014</Color>   <!-- input / control bg -->
+    <Color x:Key="Bg3">#FF2A1318</Color>   <!-- hover / pill bg -->
+    <Color x:Key="Border">#FF3D1A20</Color>
+    <Color x:Key="Text">#FFF0DCDE</Color>
+    <Color x:Key="TextDim">#FF8A6B70</Color>
+    <Color x:Key="Accent">#FFDC1E2D</Color>    <!-- brand crimson — matches logo triangle -->
+    <Color x:Key="AccentDim">#FF7A0E18</Color> <!-- dark crimson for hover/pressed -->
+    <!-- Status colors — diverged from accent so "UP" reads instantly without clashing. -->
+    <Color x:Key="Good">#FFFF6B3D</Color>      <!-- bright red-orange = powered/hot -->
+    <Color x:Key="Bad">#FF6F575A</Color>       <!-- desaturated grey-red = offline -->
     <Color x:Key="Warn">#FFD29922</Color>
-    <Color x:Key="Info">#FF66D9FF</Color>
+    <Color x:Key="Info">#FFE5B0B4</Color>      <!-- pale warm rose for info pills -->
+    <Color x:Key="Watermark">#FF5A2E34</Color> <!-- dim signature stamp -->
+    <Color x:Key="WatermarkBright">#FFAE5560</Color>
 
     <SolidColorBrush x:Key="BgBrush0" Color="{StaticResource Bg0}"/>
     <SolidColorBrush x:Key="BgBrush1" Color="{StaticResource Bg1}"/>
@@ -30,6 +34,8 @@
     <SolidColorBrush x:Key="BadBrush" Color="{StaticResource Bad}"/>
     <SolidColorBrush x:Key="WarnBrush" Color="{StaticResource Warn}"/>
     <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource Info}"/>
+    <SolidColorBrush x:Key="WatermarkBrush" Color="{StaticResource Watermark}"/>
+    <SolidColorBrush x:Key="WatermarkBrightBrush" Color="{StaticResource WatermarkBright}"/>
 
     <!-- Defaults -->
     <Style TargetType="{x:Type Window}">
@@ -156,7 +162,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="track" Property="Background" Value="{StaticResource GoodBrush}"/>
+                            <Setter TargetName="track" Property="Background" Value="{StaticResource AccentBrush}"/>
                             <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="thumb" Property="Margin" Value="0,0,3,0"/>
                         </Trigger>

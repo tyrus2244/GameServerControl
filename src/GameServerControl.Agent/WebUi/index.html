@@ -6,11 +6,13 @@
 <meta name="theme-color" content="#050A0E"/>
 <title>Game Server Control</title>
 <style>
+  /* TK-ECLIPSE theme — matched to the desktop logo (red play-mark on near-black). */
   :root {
-    --bg0:#050A0E; --bg1:#0D1B23; --bg2:#142730; --bg3:#1B3340;
-    --border:#2A3D47; --text:#DCEFEA; --textDim:#6F8B85;
-    --accent:#3FFF8E; --accentDim:#176B41;
-    --bad:#FF5C6A; --warn:#D29922; --info:#66D9FF;
+    --bg0:#0A0405; --bg1:#15090B; --bg2:#1C1014; --bg3:#2A1318;
+    --border:#3D1A20; --text:#F0DCDE; --textDim:#8A6B70;
+    --accent:#DC1E2D; --accentDim:#7A0E18;
+    --good:#FF6B3D; --bad:#6F575A; --warn:#D29922; --info:#E5B0B4;
+    --watermark:#5A2E34;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:var(--bg0);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
@@ -47,7 +49,7 @@
   .actions{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
   .actions button{background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-weight:600;cursor:pointer;font-size:13px}
   .actions button:hover{border-color:var(--accent);background:var(--accentDim)}
-  .actions button.danger:hover{border-color:var(--bad);background:var(--bad);color:#fff}
+  .actions button.danger:hover{border-color:var(--accent);background:var(--accent);color:#fff}
   .actions button:disabled{opacity:.4;cursor:default;background:var(--bg3);border-color:var(--border)}
 
   .login{max-width:420px;margin:80px auto;background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:24px}
@@ -60,6 +62,14 @@
   .toast.err{border-color:var(--bad)}
   .toast.ok{border-color:var(--accent)}
   .empty{text-align:center;color:var(--textDim);padding:60px 0}
+
+  /* TK-ECLIPSE signature stamp */
+  .sig{display:inline-flex;align-items:center;gap:6px;font-family:Consolas,"Cascadia Mono",monospace;
+       font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--accent);
+       background:var(--bg2);border:1px solid var(--accentDim);border-radius:3px;padding:2px 6px;
+       text-decoration:none}
+  .sig-footer{position:fixed;bottom:8px;left:10px;font-family:Consolas,"Cascadia Mono",monospace;
+              font-size:10px;color:var(--watermark);letter-spacing:.5px;pointer-events:none;user-select:none}
 
   /* Drawer (slide-in panel for Players/Mods/Backups/Logs) */
   .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.2s;z-index:20}
@@ -100,7 +110,8 @@
 
 <div id="login" class="login" style="display:none">
   <h2>🎮 Game Server Control</h2>
-  <p style="color:var(--textDim);margin:0">Paste your agent API token to connect.</p>
+  <p style="color:var(--textDim);margin:0 0 10px 0">Paste your agent API token to connect.</p>
+  <span class="sig" title="TK-ECLIPSE — built by tyrus">TK-ECLIPSE</span>
   <label>Agent URL</label>
   <input id="login-url" type="text" placeholder="http://100.90.15.50:5099"/>
   <label>API Token</label>
@@ -111,6 +122,7 @@
 <div id="app" style="display:none">
   <header>
     <h1>🎮 Game Server Control</h1>
+    <span class="sig" title="TK-ECLIPSE — built by tyrus">TK-ECLIPSE</span>
     <div class="url" id="header-url"></div>
     <div class="pill" id="conn"><span class="dot"></span><span id="conn-label">Connecting…</span></div>
     <button onclick="refresh()">↻ Refresh</button>
@@ -131,6 +143,7 @@
 </div>
 
 <div id="toast" class="toast"></div>
+<div class="sig-footer">◢ TK-ECLIPSE</div>
 
 <script>
 const $ = sel => document.querySelector(sel);
@@ -199,7 +212,7 @@ function setConnected(up){
 
 function vmBadge(s){
   switch (s){
-    case 'Running': return ['VM RUNNING', 'var(--accent)'];
+    case 'Running': return ['VM RUNNING', 'var(--good)'];
     case 'Off': return ['VM OFF', 'var(--bad)'];
     case 'NotApplicable': return ['BARE METAL', 'var(--info)'];
     case 'Unknown': return ['VM ?', 'var(--textDim)'];
@@ -208,7 +221,7 @@ function vmBadge(s){
 }
 function procBadge(s, pid){
   switch (s){
-    case 'Running': return ['GAME UP' + (pid?' · pid '+pid:''), 'var(--accent)'];
+    case 'Running': return ['GAME UP' + (pid?' · pid '+pid:''), 'var(--good)'];
     case 'NotRunning': return ['GAME DOWN', 'var(--bad)'];
     default: return ['GAME ?', 'var(--textDim)'];
   }
