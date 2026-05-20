@@ -90,12 +90,12 @@
                                                             <Border Margin="8,2,0,0" Padding="6,1" CornerRadius="3" Background="{StaticResource BgBrush2}">
                                                                 <TextBlock Text="{Binding Version, StringFormat=v{0}}" FontSize="11" Foreground="{StaticResource TextDimBrush}"/>
                                                             </Border>
-                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#3D1A20"
-                                                                    BorderBrush="#7A0E18" BorderThickness="1"
+                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#0F2A14"
+                                                                    BorderBrush="#3FB950" BorderThickness="1"
                                                                     Visibility="{Binding ServerSideOnly, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
-                                                                <TextBlock Text="✓ server-side" FontSize="11" Foreground="#FF6B3D"/>
+                                                                <TextBlock Text="✓ server-side" FontSize="11" Foreground="#3FB950"/>
                                                             </Border>
-                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#4A2A0D"
+                                                            <Border Margin="6,2,0,0" Padding="6,1" CornerRadius="3" Background="#3A2A0D"
                                                                     BorderBrush="#D29922" BorderThickness="1"
                                                                     Visibility="{Binding ClientRequired, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
                                                                 <TextBlock Text="⚠ needs client install" FontSize="11" Foreground="#D29922"/>

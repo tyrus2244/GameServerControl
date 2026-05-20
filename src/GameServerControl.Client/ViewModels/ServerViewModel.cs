@@ -72,24 +72,10 @@ public sealed partial class ServerViewModel : ObservableObject
     [RelayCommand]
     private void Stats() => _cb.Stats?.Invoke(this);
 
-    // ---- TK-ECLIPSE donate button ----
-    // Open the maintainer's PayPal.me URL in the default browser. URL lives here as a single
-    // named constant so it's a one-line edit to point at a different handle.
+    // The maintainer's donate URL. Kept here as a single named constant so MainViewModel.DonateCommand
+    // (the bottom-right footer link) and any future feature can reuse it without scattering the URL
+    // across multiple files. Per-card donate buttons were removed — this is just the source of truth.
     public const string DonateUrl = "https://paypal.me/TKECLIPSE";
-
-    [RelayCommand]
-    private void Donate()
-    {
-        try
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = DonateUrl,
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex) { _toast($"Could not open donate link: {ex.Message}"); }
-    }
 
     public bool HasRcon => Def.RconPort is > 0;
     public bool HasScheduledTask => !string.IsNullOrWhiteSpace(Def.ScheduledTaskName);
@@ -211,15 +197,15 @@ public sealed partial class ServerViewModel : ObservableObject
         _ => "GAME ?"
     };
 
-    // Matched to Dark.xaml: Good (powered) = warm orange-red, Bad (offline) = desat grey-red,
-    // Unknown = muted text-dim, transitional = pale rose info color.
-    public string VmBadgeColor => VmState == VmState.Running ? "#FF6B3D" :
-        VmState == VmState.Off ? "#6F575A" :
-        VmState == VmState.Unknown ? "#8A6B70" : "#E5B0B4";
+    // Matched to Dark.xaml: Good = GitHub green, Bad = slate grey, Unknown = muted text-dim,
+    // transitional = info blue. Status reads instantly without competing with the brand red.
+    public string VmBadgeColor => VmState == VmState.Running ? "#3FB950" :
+        VmState == VmState.Off ? "#6E7681" :
+        VmState == VmState.Unknown ? "#8B939F" : "#58A6FF";
 
-    public string ProcBadgeColor => ProcessState == ProcessState.Running ? "#FF6B3D" :
-        ProcessState == ProcessState.NotRunning ? "#6F575A" :
-        ProcessState == ProcessState.Unknown ? "#8A6B70" : "#E5B0B4";
+    public string ProcBadgeColor => ProcessState == ProcessState.Running ? "#3FB950" :
+        ProcessState == ProcessState.NotRunning ? "#6E7681" :
+        ProcessState == ProcessState.Unknown ? "#8B939F" : "#58A6FF";
 
     public void ApplyStatus(ServerStatus s)
     {

@@ -2,24 +2,29 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!-- Palette — matched to the TK-ECLIPSE logo: red play-mark on near-black with red bevel. -->
-    <!-- Backgrounds get a slight red-warm tint so the whole app feels of-a-piece with the icon. -->
-    <Color x:Key="Bg0">#FF0A0405</Color>   <!-- deepest black (page bg) -->
-    <Color x:Key="Bg1">#FF15090B</Color>   <!-- card / panel bg -->
-    <Color x:Key="Bg2">#FF1C1014</Color>   <!-- input / control bg -->
-    <Color x:Key="Bg3">#FF2A1318</Color>   <!-- hover / pill bg -->
-    <Color x:Key="Border">#FF3D1A20</Color>
-    <Color x:Key="Text">#FFF0DCDE</Color>
-    <Color x:Key="TextDim">#FF8A6B70</Color>
-    <Color x:Key="Accent">#FFDC1E2D</Color>    <!-- brand crimson — matches logo triangle -->
-    <Color x:Key="AccentDim">#FF7A0E18</Color> <!-- dark crimson for hover/pressed -->
-    <!-- Status colors — diverged from accent so "UP" reads instantly without clashing. -->
-    <Color x:Key="Good">#FFFF6B3D</Color>      <!-- bright red-orange = powered/hot -->
-    <Color x:Key="Bad">#FF6F575A</Color>       <!-- desaturated grey-red = offline -->
-    <Color x:Key="Warn">#FFD29922</Color>
-    <Color x:Key="Info">#FFE5B0B4</Color>      <!-- pale warm rose for info pills -->
-    <Color x:Key="Watermark">#FF5A2E34</Color> <!-- dim signature stamp -->
-    <Color x:Key="WatermarkBright">#FFAE5560</Color>
+    <!-- Palette — GitHub Dark / Linear-inspired neutral surfaces. The black+red TK-ECLIPSE logo
+         supplies the brand color; surfaces stay neutral cool so the red logo POPS instead of
+         getting drowned in red-tinted backgrounds. Accent red appears only on:
+           - The donate stamp
+           - Hover/pressed states of action buttons
+           - The update-available banner
+         Status colors revert to semantic universals: green=up, grey=offline, amber=warn, blue=info.
+    -->
+    <Color x:Key="Bg0">#FF0B0C0F</Color>   <!-- page bg — slight cool tint, not pure black (easier on OLEDs + matches premium dev tools) -->
+    <Color x:Key="Bg1">#FF14161A</Color>   <!-- elevated card / panel -->
+    <Color x:Key="Bg2">#FF1B1E24</Color>   <!-- input / control bg -->
+    <Color x:Key="Bg3">#FF262A33</Color>   <!-- hover / active pill -->
+    <Color x:Key="Border">#FF2D323C</Color>
+    <Color x:Key="Text">#FFE8EAED</Color>
+    <Color x:Key="TextDim">#FF8B939F</Color>
+    <Color x:Key="Accent">#FFE0294A</Color>    <!-- brand crimson — matches logo's play triangle -->
+    <Color x:Key="AccentDim">#FF8C1226</Color> <!-- dark crimson for hover/pressed -->
+    <Color x:Key="Good">#FF3FB950</Color>      <!-- GitHub green = "running" -->
+    <Color x:Key="Bad">#FF6E7681</Color>       <!-- desaturated slate = "offline" -->
+    <Color x:Key="Warn">#FFD29922</Color>      <!-- amber -->
+    <Color x:Key="Info">#FF58A6FF</Color>      <!-- GitHub blue for info pills (bare-metal badge, etc.) -->
+    <Color x:Key="Watermark">#FF4A5263</Color>
+    <Color x:Key="WatermarkBright">#FF8B939F</Color>
 
     <SolidColorBrush x:Key="BgBrush0" Color="{StaticResource Bg0}"/>
     <SolidColorBrush x:Key="BgBrush1" Color="{StaticResource Bg1}"/>

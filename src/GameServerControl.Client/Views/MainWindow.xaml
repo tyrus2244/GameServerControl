@@ -35,21 +35,6 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <Image Source="pack://application:,,,/Assets/logo.png" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="Game Server Control" FontSize="20" FontWeight="Bold"/>
-                    <!-- Brand stamp is now itself a donate link. Click anywhere on the box. -->
-                    <Button Background="{StaticResource BgBrush2}" BorderBrush="{StaticResource AccentDimBrush}" BorderThickness="1"
-                            Padding="6,1" Margin="10,2,0,0" VerticalAlignment="Center" Cursor="Hand"
-                            Command="{Binding DonateCommand}"
-                            ToolTip="Built by TK-ECLIPSE · click to support on PayPal">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                        <TextBlock Text="TK-ECLIPSE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"
-                                   FontFamily="Consolas, Cascadia Mono"/>
-                    </Button>
                     <TextBlock Text="{Binding AgentUrl, StringFormat=' · {0}'}" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </StackPanel>
                 <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource StatusPill}">
@@ -197,10 +182,6 @@
                                                      Visibility="{Binding IsBusy, Converter={x:Static vm:BoolVisibilityConverter.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Button Content="❤ TK-ECLIPSE" Style="{StaticResource ActionButton}"
-                                                Command="{Binding DonateCommand}"
-                                                Foreground="{StaticResource AccentBrush}"
-                                                ToolTip="Support the maintainer · opens PayPal.me/TKECLIPSE"/>
                                         <Button Content="✎ Edit"   Style="{StaticResource ActionButton}" Command="{Binding EditCommand}"/>
                                         <Button Content="🗑 Delete" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}"/>
                                     </StackPanel>
@@ -226,10 +207,29 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Activity" FontWeight="SemiBold" Foreground="{StaticResource TextDimBrush}"/>
-                        <TextBlock Grid.Column="1" Text="◢ TK-ECLIPSE" FontSize="10" FontWeight="Bold"
-                                   FontFamily="Consolas, Cascadia Mono"
-                                   Foreground="{StaticResource WatermarkBrush}" VerticalAlignment="Center"
-                                   ToolTip="TK-ECLIPSE — original design"/>
+                        <!-- Single, persistent donate link. Anchored bottom-right of the window (this Border is in the
+                             always-visible Activity pane header so it stays put even when scrolling the server list). -->
+                        <Button Grid.Column="1" Command="{Binding DonateCommand}" Cursor="Hand"
+                                ToolTip="❤ Support TK-ECLIPSE on PayPal — paypal.me/TKECLIPSE"
+                                Background="Transparent" BorderThickness="0" Padding="0">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="b" Background="Transparent" Padding="6,2" CornerRadius="3">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="b" Property="Background" Value="{StaticResource BgBrush3}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <TextBlock FontSize="11" FontFamily="Consolas, Cascadia Mono">
+                                <Run Text="❤" Foreground="{StaticResource AccentBrush}"/>
+                                <Run Text=" PayPal · " Foreground="{StaticResource TextDimBrush}"/>
+                                <Run Text="TK-ECLIPSE" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                            </TextBlock>
+                        </Button>
                     </Grid>
                 </Border>
                 <ListBox Grid.Row="1"

@@ -36,7 +36,7 @@
                     <TextBlock x:Name="CpuLabel" Text="—" Margin="14,0,0,0" Foreground="{StaticResource TextDimBrush}"/>
                 </StackPanel>
                 <Canvas Grid.Row="1" x:Name="CpuCanvas" Background="{StaticResource BgBrush2}" ClipToBounds="True">
-                    <Polyline x:Name="CpuLine" Stroke="#FF6B3D" StrokeThickness="2" Points=""/>
+                    <Polyline x:Name="CpuLine" Stroke="#3FB950" StrokeThickness="2" Points=""/>
                 </Canvas>
             </Grid>
         </Border>
@@ -53,7 +53,7 @@
                     <TextBlock x:Name="RamLabel" Text="—" Margin="14,0,0,0" Foreground="{StaticResource TextDimBrush}"/>
                 </StackPanel>
                 <Canvas Grid.Row="2" x:Name="RamCanvas" Background="{StaticResource BgBrush2}" ClipToBounds="True">
-                    <Polyline x:Name="RamLine" Stroke="#DC1E2D" StrokeThickness="2" Points=""/>
+                    <Polyline x:Name="RamLine" Stroke="#58A6FF" StrokeThickness="2" Points=""/>
                 </Canvas>
             </Grid>
         </Border>
