@@ -67,6 +67,12 @@
   .toast.ok{border-color:var(--accent)}
   .empty{text-align:center;color:var(--textDim);padding:60px 0}
 
+  /* Update-available banner */
+  .updbar{display:none;background:var(--accentDim);border-bottom:1px solid var(--accent);
+          padding:8px 20px;color:var(--text);font-size:13px;font-weight:600}
+  .updbar.show{display:flex;align-items:center;gap:10px}
+  .updbar a{color:#fff;text-decoration:underline;font-weight:700}
+
   /* TK-ECLIPSE signature stamp */
   .sig{display:inline-flex;align-items:center;gap:6px;font-family:Consolas,"Cascadia Mono",monospace;
        font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--accent);
@@ -132,6 +138,11 @@
     <button onclick="refresh()">↻ Refresh</button>
     <button onclick="signout()">⎋ Sign out</button>
   </header>
+  <div id="updbar" class="updbar">
+    <span>⬆</span>
+    <span id="updbar-msg">A new release is available.</span>
+    <a id="updbar-link" href="#" target="_blank" rel="noopener noreferrer">View release notes →</a>
+  </div>
   <main id="cards"><div class="empty">Loading…</div></main>
 </div>
 
@@ -566,11 +577,24 @@ async function start(){
   try {
     await api('/api/health');
     await loadServers();
+    checkUpdates();   // fire-and-forget — banner appears asynchronously when result lands
     setInterval(refresh, 5000);
   } catch (e){
     toast('Could not reach agent: '+e.message, 'err');
     signout();
   }
+}
+
+async function checkUpdates(){
+  try {
+    const v = await api('/api/version');
+    if (!v || !v.updateAvailable) return;
+    const bar = $('#updbar');
+    $('#updbar-msg').textContent = `Version ${v.latestVersion} is available — you are running ${v.currentVersion}.`;
+    if (v.latestUrl){ $('#updbar-link').href = v.latestUrl; $('#updbar-link').style.display = ''; }
+    else { $('#updbar-link').style.display = 'none'; }
+    bar.classList.add('show');
+  } catch { /* ignore — not worth shouting about */ }
 }
 
 // Boot

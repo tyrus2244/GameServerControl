@@ -46,6 +46,8 @@ builder.Services.AddSingleton<StatusTracker>();
 builder.Services.AddSingleton<ServerOrchestrator>();
 builder.Services.AddSingleton<MaintenanceScheduler>();
 builder.Services.AddSingleton<GameServerControl.Agent.Notifications.DiscordNotifier>();
+builder.Services.AddSingleton<GameServerControl.Agent.Notifications.UpdateChecker>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<GameServerControl.Agent.Notifications.UpdateChecker>());
 builder.Services.AddSingleton<ValheimConfig>();
 builder.Services.AddSingleton<PalworldConfig>();
 builder.Services.AddSingleton<WindroseConfig>();
@@ -131,6 +133,12 @@ app.UseMiddleware<AuditMiddleware>();
 var api = app.MapGroup("/api").RequireAuthorization();
 
 api.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTimeOffset.UtcNow }));
+
+// Update checker — returns the cached latest-known version and whether it's newer than ours.
+api.MapGet("/version", (GameServerControl.Agent.Notifications.UpdateChecker checker) => Results.Ok(checker.Latest));
+// Force an immediate re-check (admin-only via RoleEnforcementMiddleware on POST).
+api.MapPost("/version/check", async (GameServerControl.Agent.Notifications.UpdateChecker checker, CancellationToken ct) =>
+    Results.Ok(await checker.CheckAsync(ct)));
 
 api.MapGet("/discover", (GameServerControl.Agent.Discovery.ServerDiscoveryService disco) =>
     Results.Ok(disco.Discover()));

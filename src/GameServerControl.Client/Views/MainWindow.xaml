@@ -19,6 +19,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="180"/>
         </Grid.RowDefinitions>
@@ -70,8 +71,20 @@
             </Grid>
         </Border>
 
+        <!-- Update-available banner -->
+        <Border Grid.Row="1" Background="{StaticResource AccentDimBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,1"
+                Padding="20,8" Visibility="{Binding UpdateAvailable, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="⬆" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="A new release is available — " VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="{Binding UpdateBannerText}" FontWeight="Bold" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}"/>
+                <Button Content="View release notes" Style="{StaticResource ActionButton}"
+                        Command="{Binding OpenUpdateUrlCommand}" Margin="14,0,0,0"/>
+            </StackPanel>
+        </Border>
+
         <!-- Server list -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,16">
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="20,16">
             <ItemsControl ItemsSource="{Binding Servers}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -188,7 +201,7 @@
         </ScrollViewer>
 
         <!-- Log pane -->
-        <Border Grid.Row="2" Background="{StaticResource BgBrush1}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="3" Background="{StaticResource BgBrush1}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

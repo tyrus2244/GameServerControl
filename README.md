@@ -93,6 +93,30 @@ LICENSE                       MIT
 
 ## Install
 
+### One-line install (recommended)
+
+**Windows** (PowerShell as Administrator):
+```powershell
+iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
+```
+
+**Linux** (any modern distro):
+```bash
+curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/linux/install-from-release.sh | sudo bash
+```
+
+Both scripts:
+- Detect and install the .NET 8 runtime if missing.
+- Download the latest GitHub Release asset (no source build needed).
+- Stop/replace/start the agent service.
+- Preserve `appsettings.json`, `servers.json`, `tokens.json` across upgrades.
+- Print the auto-generated API token on first install.
+- **Re-run the same command to update** to the latest release.
+
+Pin a specific version with `$env:GSC_VERSION = 'v1.0.0'` (Windows) or `GSC_VERSION=v1.0.0 sudo bash …` (Linux).
+
+The agent itself also checks GitHub once a day and shows an in-app banner when a newer release is published.
+
 ### Supported hosts — feature parity
 
 |                                         | Windows | Linux |

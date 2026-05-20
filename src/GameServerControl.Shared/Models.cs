@@ -102,6 +102,13 @@ public record BackupInfo(
 
 public record DiscordWebhookTestRequest(string WebhookUrl);
 
+public record UpdateStatus(
+    string CurrentVersion,
+    string? LatestVersion,
+    string? LatestUrl,
+    bool UpdateAvailable,
+    DateTimeOffset? CheckedAt);
+
 public enum TokenRole
 {
     Admin,

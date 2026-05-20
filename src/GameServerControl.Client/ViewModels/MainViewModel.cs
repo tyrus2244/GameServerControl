@@ -30,6 +30,23 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private string connectionLabel = "Disconnected";
     [ObservableProperty] private string agentUrl = "";
 
+    // Update-available banner — populated after Connect succeeds; bound from MainWindow header.
+    [ObservableProperty] private bool updateAvailable;
+    [ObservableProperty] private string? updateBannerText;
+    [ObservableProperty] private string? updateUrl;
+
+    [RelayCommand]
+    private void OpenUpdateUrl()
+    {
+        if (string.IsNullOrEmpty(UpdateUrl)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            { FileName = UpdateUrl, UseShellExecute = true });
+        }
+        catch (Exception ex) { Toast("Could not open release page: " + ex.Message); }
+    }
+
     public MainViewModel()
     {
         AgentUrl = string.Join(" · ", _settings.Agents.Select(a => a.Nickname));
@@ -412,7 +429,38 @@ public sealed partial class MainViewModel : ObservableObject
         IsConnected = true;
         ConnectionLabel = $"Connected to {connected} agent{(connected == 1 ? "" : "s")}";
 
+        // After we're connected, ask the first agent whether a newer release exists. Best-effort —
+        // the banner only appears if the agent's UpdateChecker has actually run + returned newer.
+        _ = CheckForUpdatesAsync();
+
         _pollCts = new CancellationTokenSource();
         _ = Task.Run(() => PollLoop(_pollCts.Token));
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        var c = _clients.Values.FirstOrDefault();
+        if (c is null) return;
+        try
+        {
+            var status = await c.GetVersionAsync();
+            if (status is null) return;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (status.UpdateAvailable && !string.IsNullOrEmpty(status.LatestVersion))
+                {
+                    UpdateAvailable = true;
+                    UpdateBannerText = $"v{status.LatestVersion} available (you have v{status.CurrentVersion})";
+                    UpdateUrl = status.LatestUrl;
+                }
+                else
+                {
+                    UpdateAvailable = false;
+                    UpdateBannerText = null;
+                    UpdateUrl = null;
+                }
+            });
+        }
+        catch { /* tolerate */ }
     }
 }

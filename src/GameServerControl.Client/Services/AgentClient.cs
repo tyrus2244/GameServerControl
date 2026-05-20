@@ -227,6 +227,18 @@ public sealed class AgentClient
             throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {await r.Content.ReadAsStringAsync(ct)}");
     }
 
+    public async Task<UpdateStatus?> GetVersionAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var r = await _http.GetAsync("/api/version", ct);
+            if (!r.IsSuccessStatusCode) return null;
+            var s = await r.Content.ReadAsStringAsync(ct);
+            return JsonSerializer.Deserialize<UpdateStatus>(s, JsonOpts);
+        }
+        catch { return null; }
+    }
+
     public async Task<List<TokenMetadata>> ListTokensAsync(CancellationToken ct = default)
     {
         var r = await _http.GetAsync("/api/tokens", ct);
