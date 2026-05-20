@@ -47,6 +47,18 @@ public sealed partial class MainViewModel : ObservableObject
         catch (Exception ex) { Toast("Could not open release page: " + ex.Message); }
     }
 
+    /// <summary>Header-level donate command — opens the same PayPal URL as per-server card buttons.</summary>
+    [RelayCommand]
+    private void Donate()
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            { FileName = ServerViewModel.DonateUrl, UseShellExecute = true });
+        }
+        catch (Exception ex) { Toast("Could not open donate link: " + ex.Message); }
+    }
+
     public MainViewModel()
     {
         AgentUrl = string.Join(" · ", _settings.Agents.Select(a => a.Nickname));

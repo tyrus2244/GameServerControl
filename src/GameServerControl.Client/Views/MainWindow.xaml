@@ -35,12 +35,21 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <Image Source="pack://application:,,,/Assets/logo.png" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="Game Server Control" FontSize="20" FontWeight="Bold"/>
-                    <Border Background="{StaticResource BgBrush2}" CornerRadius="3" Padding="6,1" Margin="10,2,0,0" VerticalAlignment="Center"
-                            BorderBrush="{StaticResource AccentDimBrush}" BorderThickness="1">
+                    <!-- Brand stamp is now itself a donate link. Click anywhere on the box. -->
+                    <Button Background="{StaticResource BgBrush2}" BorderBrush="{StaticResource AccentDimBrush}" BorderThickness="1"
+                            Padding="6,1" Margin="10,2,0,0" VerticalAlignment="Center" Cursor="Hand"
+                            Command="{Binding DonateCommand}"
+                            ToolTip="Built by TK-ECLIPSE · click to support on PayPal">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
                         <TextBlock Text="TK-ECLIPSE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"
-                                   FontFamily="Consolas, Cascadia Mono" Cursor="Hand"
-                                   ToolTip="TK-ECLIPSE — built by tyrus"/>
-                    </Border>
+                                   FontFamily="Consolas, Cascadia Mono"/>
+                    </Button>
                     <TextBlock Text="{Binding AgentUrl, StringFormat=' · {0}'}" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </StackPanel>
                 <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource StatusPill}">
