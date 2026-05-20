@@ -59,8 +59,12 @@ builder.Services.AddSingleton<GameServerControl.Agent.Discovery.ServerDiscoveryS
 builder.Services.AddSingleton<GameConfigFactory>();
 // Server-side mod management (one IModManager per game family). Add more here as they ship.
 builder.Services.AddSingleton<GameServerControl.Agent.Mods.ThunderstoreClient>();
+builder.Services.AddSingleton<GameServerControl.Agent.Mods.FicsitClient>();
+builder.Services.AddSingleton<GameServerControl.Agent.Mods.GitHubReleasesClient>();
 builder.Services.AddSingleton<GameServerControl.Agent.Mods.IModManager, GameServerControl.Agent.Mods.ValheimBepInExModManager>();
 builder.Services.AddSingleton<GameServerControl.Agent.Mods.IModManager, GameServerControl.Agent.Mods.SatisfactoryThunderstoreModManager>();
+builder.Services.AddSingleton<GameServerControl.Agent.Mods.IModManager, GameServerControl.Agent.Mods.PalworldCuratedModManager>();
+builder.Services.AddSingleton<GameServerControl.Agent.Mods.IModManager, GameServerControl.Agent.Mods.ArkWorkshopModManager>();
 builder.Services.AddSingleton<GameServerControl.Agent.Mods.ModManagerRegistry>();
 builder.Services.AddSingleton<SourceRconClient>();
 builder.Services.AddSingleton<IGameRcon, PalworldRcon>();

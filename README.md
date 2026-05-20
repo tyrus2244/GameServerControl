@@ -28,7 +28,12 @@
 
 - **Bare-metal *and* Hyper-V VM hosting** — single UI manages both. Bare-metal servers run via Windows Task Scheduler with auto-restart-on-crash wrappers; VM servers use Hyper-V cmdlets + PowerShell Direct.
 - **🔍 Auto-discover installed servers** — one click scans Steam libraries (via `libraryfolders.vdf` + `appmanifest_*.acf`) and common SteamCMD paths, matches against 11+ known dedicated-server presets, marks already-configured installs.
-- **🧩 Server-side mod management** — browse + one-click install Valheim mods from Thunderstore right in the dashboard. **Filters to server-side-only mods by default** so players don't need to install anything on their end. Pluggable per game (`IModManager`); BepInEx flow today, Satisfactory/ARK extensible.
+- **🧩 Server-side mod management** — browse + one-click install mods right in the dashboard. **Filters to server-side-only by default** so players don't need to install anything on their end. Per-game sources:
+  - **Valheim** → Thunderstore (`valheim.thunderstore.io`)
+  - **Satisfactory** → ficsit.app (GraphQL)
+  - **Palworld** → curated catalog (Palguard etc.), fetched live from GitHub Releases so versions stay current
+  - **ARK SE/SA** → Steam Workshop, install-by-ID via SteamCMD (paste a workshop URL or ID)
+  - **Windrose** → no community marketplace yet — surface a clean explanation
 - **Per-game config editor** — curated schemas (with units, sliders, dropdowns, tooltips) for Valheim · Palworld · Windrose · Satisfactory · ARK · Rust · 7DTD · Terraria · DST · Project Zomboid · Minecraft.
 - **Auto-discovered settings** — when a game ships a defaults file or admin API (Palworld's `DefaultPalWorldSettings.ini`, Satisfactory's `GetAdvancedGameSettings`), the editor surfaces *every* setting beyond the curated ones. Palworld jumps from 53 curated fields to **109 total**.
 - **Live Satisfactory Admin API integration** — claim server, rename, set client password, toggle all 13 Advanced Game Settings (NoPower, GodMode, FlightMode, StartingTier, …) without restarting. Applies instantly. Also surfaces the **current session name** as a read-only "Session ID" (analogous to Windrose's invite code).

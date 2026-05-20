@@ -28,12 +28,12 @@ public sealed class SatisfactoryThunderstoreModManager : IModManager
 {
     private readonly ILogger<SatisfactoryThunderstoreModManager> _logger;
     private readonly HttpClient _http;
-    private readonly ThunderstoreClient _thunderstore;
+    private readonly FicsitClient _ficsit;
 
-    public SatisfactoryThunderstoreModManager(ILogger<SatisfactoryThunderstoreModManager> logger, ThunderstoreClient thunderstore)
+    public SatisfactoryThunderstoreModManager(ILogger<SatisfactoryThunderstoreModManager> logger, FicsitClient ficsit)
     {
         _logger = logger;
-        _thunderstore = thunderstore;
+        _ficsit = ficsit;
         _http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("GameServerControl-ModInstaller/1.0");
     }
@@ -44,10 +44,10 @@ public sealed class SatisfactoryThunderstoreModManager : IModManager
     public string ModsFolder(ServerDef def) =>
         Path.Combine(def.GuestWorkingDir, "FactoryGame", "Mods");
 
-    public string? MarketplaceSource(ServerDef def) => "satisfactory.thunderstore.io";
+    public string? MarketplaceSource(ServerDef def) => "ficsit.app";
 
     public Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, bool serverSideOnly, CancellationToken ct)
-        => _thunderstore.SearchAsync("satisfactory", query, limit, serverSideOnly, ct);
+        => _ficsit.SearchAsync(query, limit, serverSideOnly, ct);
 
     private static string MetadataPath(ServerDef def) =>
         Path.Combine(def.GuestWorkingDir, "FactoryGame", ".gsc-mods.json");
