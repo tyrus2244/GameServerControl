@@ -19,6 +19,16 @@ public interface IModManager
     Task<ModInfo[]> ListAsync(ServerDef def, CancellationToken ct);
     Task<ModInstallResult> InstallFromUrlAsync(ServerDef def, string url, string? displayName, CancellationToken ct);
     Task<bool> UninstallAsync(ServerDef def, string modId, CancellationToken ct);
+
+    /// <summary>
+    /// Returns a search-result page from this game's mod marketplace.
+    /// <see cref="MarketplaceSource"/> identifies what we're searching (e.g. "valheim.thunderstore.io")
+    /// so the UI can surface "Searching valheim.thunderstore.io…".
+    /// Implementations may return an empty array + <see cref="MarketplaceSource"/>=null when search isn't
+    /// available for this game.
+    /// </summary>
+    Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, CancellationToken ct);
+    string? MarketplaceSource(ServerDef def);
 }
 
 /// <summary>

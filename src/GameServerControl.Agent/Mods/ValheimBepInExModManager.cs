@@ -25,13 +25,20 @@ public sealed class ValheimBepInExModManager : IModManager
 {
     private readonly ILogger<ValheimBepInExModManager> _logger;
     private readonly HttpClient _http;
+    private readonly ThunderstoreClient _thunderstore;
 
-    public ValheimBepInExModManager(ILogger<ValheimBepInExModManager> logger)
+    public ValheimBepInExModManager(ILogger<ValheimBepInExModManager> logger, ThunderstoreClient thunderstore)
     {
         _logger = logger;
+        _thunderstore = thunderstore;
         _http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("GameServerControl-ModInstaller/1.0");
     }
+
+    public string? MarketplaceSource(ServerDef def) => "valheim.thunderstore.io";
+
+    public Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, CancellationToken ct)
+        => _thunderstore.SearchAsync("valheim", query, limit, ct);
 
     public bool Supports(ServerDef def)
     {

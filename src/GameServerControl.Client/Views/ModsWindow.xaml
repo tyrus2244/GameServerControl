@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:GameServerControl.Client.ViewModels"
         Title="Mods"
-        Width="820" Height="600"
+        Width="920" Height="680"
         Background="{StaticResource BgBrush0}"
         Foreground="{StaticResource TextBrush}"
         TextElement.Foreground="{StaticResource TextBrush}"
@@ -12,7 +12,6 @@
         WindowStartupLocation="CenterOwner">
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -23,85 +22,176 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock x:Name="HeaderText" Text="Server-side mods" FontSize="20" FontWeight="Bold"/>
             <TextBlock x:Name="SubtitleText"
-                       Text="Manage BepInEx plugins for this server. Restart the server after installing/removing for changes to take effect."
+                       Text="Search a mod catalog or paste a URL. Restart the server after install/uninstall for changes to take effect."
                        Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
             <TextBlock x:Name="ModsFolderText" FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,8,0,0" TextWrapping="Wrap"/>
         </StackPanel>
 
-        <!-- Install from URL -->
-        <Border Grid.Row="1" Background="{StaticResource BgBrush1}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
-            <StackPanel>
-                <TextBlock Text="Install from URL" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                <TextBlock Text="Paste a Thunderstore 'Manual Download' link or any direct .zip URL." FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,6"/>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" x:Name="UrlBox" Padding="6" Background="{StaticResource BgBrush2}" Foreground="{StaticResource TextBrush}"
-                             CaretBrush="{StaticResource TextBrush}" BorderBrush="{StaticResource BorderBrush}"/>
-                    <Button Grid.Column="1" Content="Install" Style="{StaticResource ActionButton}" Click="Install_Click" Margin="8,0,0,0"/>
-                </Grid>
-                <TextBlock x:Name="WarnText"
-                           Text="⚠ Server-side-only mods affect the server alone. If a mod also changes the game (visual/balance/items), every player needs to install it too — check the mod's docs."
-                           FontSize="11" Foreground="#dca74a" Margin="0,8,0,0" TextWrapping="Wrap"/>
-            </StackPanel>
-        </Border>
+        <!-- Tabs -->
+        <TabControl Grid.Row="1" Background="{StaticResource BgBrush1}" BorderBrush="{StaticResource BorderBrush}">
+            <!-- =========================================================== -->
+            <!-- Browse tab: search Thunderstore                              -->
+            <!-- =========================================================== -->
+            <TabItem Header="🔍 Browse">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-        <!-- Installed list -->
-        <Border Grid.Row="2" Background="{StaticResource BgBrush1}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
-            <Grid>
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl x:Name="ModList">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="{StaticResource BgBrush0}"
-                                        BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="0,0,0,1"
-                                        Padding="14,10">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold"/>
-                                                <TextBlock Text="{Binding Version, StringFormat=' v{0}'}" FontSize="12" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="6,2,0,0"/>
-                                            </StackPanel>
-                                            <TextBlock Text="{Binding ModId}" FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,3,0,0"/>
-                                            <TextBlock FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,2,0,0">
-                                                <Run Text="{Binding SizeKb, Mode=OneWay, StringFormat={}{0} KB}"/>
-                                                <Run Text="·"/>
-                                                <Run Text="{Binding InstalledAtLabel, Mode=OneWay}"/>
-                                            </TextBlock>
-                                        </StackPanel>
-                                        <Button Grid.Column="1"
-                                                Content="Uninstall"
-                                                Style="{StaticResource ActionButton}"
-                                                VerticalAlignment="Center"
-                                                Click="Uninstall_Click"
-                                                Tag="{Binding ModId}"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-                <TextBlock x:Name="EmptyText"
-                           Text="No mods installed yet. Paste a URL above to install one."
-                           Foreground="{StaticResource TextDimBrush}"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="Collapsed"/>
-            </Grid>
-        </Border>
+                    <!-- Search box -->
+                    <Grid Grid.Row="0" Margin="0,4,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" x:Name="SearchBox" Padding="6"
+                                 Background="{StaticResource BgBrush2}" Foreground="{StaticResource TextBrush}"
+                                 CaretBrush="{StaticResource TextBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                 KeyDown="SearchBox_KeyDown"/>
+                        <Button Grid.Column="1" Content="Search" Style="{StaticResource ActionButton}" Click="Search_Click" Margin="8,0,0,0"/>
+                    </Grid>
+                    <TextBlock Grid.Row="1" x:Name="SearchSourceText" FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,6"/>
+
+                    <!-- Search results -->
+                    <Border Grid.Row="2" Background="{StaticResource BgBrush0}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                        <Grid>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="SearchList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{StaticResource BgBrush1}"
+                                                    BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="0,0,0,1"
+                                                    Padding="12,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="64"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <!-- Icon -->
+                                                    <Border Grid.Column="0" Width="56" Height="56" CornerRadius="4"
+                                                            Background="{StaticResource BgBrush2}" Margin="0,0,12,0">
+                                                        <Image Source="{Binding IconUrl}" Stretch="Uniform"/>
+                                                    </Border>
+                                                    <!-- Info -->
+                                                    <StackPanel Grid.Column="1">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding Owner, StringFormat=' by {0}'}" FontSize="12" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="6,2,0,0"/>
+                                                            <Border Margin="8,2,0,0" Padding="6,1" CornerRadius="3" Background="{StaticResource BgBrush2}">
+                                                                <TextBlock Text="{Binding Version, StringFormat=v{0}}" FontSize="11" Foreground="{StaticResource TextDimBrush}"/>
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding DescriptionShort}" FontSize="12" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="36"/>
+                                                        <TextBlock FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0">
+                                                            <Run Text="⬇"/><Run Text="{Binding DownloadsLabel, Mode=OneWay}"/>
+                                                            <Run Text=" · ⭐"/><Run Text="{Binding RatingScore, Mode=OneWay}"/>
+                                                            <Run Text=" · "/><Run Text="{Binding CategoriesLabel, Mode=OneWay}"/>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                    <!-- Actions -->
+                                                    <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Center" Margin="12,0,0,0">
+                                                        <Button Content="Install" Style="{StaticResource ActionButton}" Click="SearchInstall_Click" Tag="{Binding}" MinWidth="80"/>
+                                                        <Button Content="Page" Style="{StaticResource ActionButton}" Click="OpenPage_Click" Tag="{Binding PackageUrl}" MinWidth="80" Margin="0,4,0,0"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <TextBlock x:Name="SearchEmptyText"
+                                       Text="No results. Try a different query (or empty for popular mods)."
+                                       Foreground="{StaticResource TextDimBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- =========================================================== -->
+            <!-- Installed tab: list + uninstall + URL paste                   -->
+            <!-- =========================================================== -->
+            <TabItem Header="📦 Installed">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <!-- Installed list -->
+                    <Border Grid.Row="0" Background="{StaticResource BgBrush0}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                        <Grid>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="ModList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{StaticResource BgBrush1}"
+                                                    BorderBrush="{StaticResource BorderBrush}"
+                                                    BorderThickness="0,0,0,1"
+                                                    Padding="14,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding Version, StringFormat=' v{0}'}" FontSize="12" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="6,2,0,0"/>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding ModId}" FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,3,0,0"/>
+                                                        <TextBlock FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,2,0,0">
+                                                            <Run Text="{Binding SizeKb, Mode=OneWay, StringFormat={}{0} KB}"/>
+                                                            <Run Text="·"/>
+                                                            <Run Text="{Binding InstalledAtLabel, Mode=OneWay}"/>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Uninstall" Style="{StaticResource ActionButton}" VerticalAlignment="Center" Click="Uninstall_Click" Tag="{Binding ModId}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <TextBlock x:Name="EmptyText"
+                                       Text="No mods installed yet. Use the Browse tab to find one."
+                                       Foreground="{StaticResource TextDimBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Power user: install from URL -->
+                    <Border Grid.Row="1" Background="{StaticResource BgBrush2}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Advanced: install from URL" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                            <TextBlock Text="For mods not on Thunderstore — paste any direct .zip URL." FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,6"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" x:Name="UrlBox" Padding="6"
+                                         Background="{StaticResource BgBrush0}" Foreground="{StaticResource TextBrush}"
+                                         CaretBrush="{StaticResource TextBrush}" BorderBrush="{StaticResource BorderBrush}"/>
+                                <Button Grid.Column="1" Content="Install" Style="{StaticResource ActionButton}" Click="Install_Click" Margin="8,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
 
         <!-- Status -->
-        <TextBlock Grid.Row="3" x:Name="StatusText" Margin="0,10,0,0" Foreground="{StaticResource TextDimBrush}" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="2" x:Name="StatusText" Margin="0,10,0,0" Foreground="{StaticResource TextDimBrush}" TextWrapping="Wrap"/>
 
-        <!-- Footer buttons -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="Refresh" Style="{StaticResource ActionButton}" Click="Refresh_Click"/>
+        <!-- Footer -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Refresh installed" Style="{StaticResource ActionButton}" Click="Refresh_Click"/>
             <Button Content="Close" Style="{StaticResource ActionButton}" Click="Close_Click"/>
         </StackPanel>
     </Grid>

@@ -24,3 +24,23 @@ public sealed record ModListResponse(
     bool Supported,
     string? UnsupportedReason,
     string? ModsFolder);       // Where on disk mods live for this server, for the user's reference.
+
+/// <summary>One row in a mod-marketplace search result (Thunderstore today; could be other sources later).</summary>
+public sealed record ModSearchResult(
+    string Name,              // "Server_devcommands"
+    string Owner,             // "JereKuusela"
+    string Version,           // "1.42.0"
+    string? Description,
+    string? IconUrl,
+    string DownloadUrl,       // direct .zip URL the agent will fetch on install
+    string PackageUrl,        // human-readable Thunderstore page
+    long Downloads,
+    int RatingScore,
+    string[] Categories,
+    bool Deprecated);
+
+public sealed record ModSearchResponse(
+    ModSearchResult[] Results,
+    bool Supported,
+    string? Source,           // e.g. "valheim.thunderstore.io" — surfaces to user in UI
+    string? UnsupportedReason);

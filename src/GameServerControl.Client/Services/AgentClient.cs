@@ -79,6 +79,16 @@ public sealed class AgentClient
         return r.IsSuccessStatusCode;
     }
 
+    public async Task<ModSearchResponse> SearchModsAsync(string serverId, string query, int limit = 30, CancellationToken ct = default)
+    {
+        var u = $"/api/servers/{serverId}/mods/search?q={Uri.EscapeDataString(query)}&limit={limit}";
+        var r = await _http.GetAsync(u, ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<ModSearchResponse>(s, JsonOpts)
+            ?? new(Array.Empty<ModSearchResult>(), false, null, "no response");
+    }
+
     public async Task<ServerStatus?> GetStatusAsync(string id, CancellationToken ct = default)
     {
         var r = await _http.GetAsync($"/api/servers/{id}/status", ct);
