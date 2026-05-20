@@ -57,6 +57,9 @@ builder.Services.AddSingleton<IDynamicSchemaExtension, SatisfactoryDynamicSchema
 builder.Services.AddSingleton<GameServerControl.Agent.Discovery.SteamLibraryReader>();
 builder.Services.AddSingleton<GameServerControl.Agent.Discovery.ServerDiscoveryService>();
 builder.Services.AddSingleton<GameConfigFactory>();
+// Server-side mod management (one IModManager per game family). Add more here as they ship.
+builder.Services.AddSingleton<GameServerControl.Agent.Mods.IModManager, GameServerControl.Agent.Mods.ValheimBepInExModManager>();
+builder.Services.AddSingleton<GameServerControl.Agent.Mods.ModManagerRegistry>();
 builder.Services.AddSingleton<SourceRconClient>();
 builder.Services.AddSingleton<IGameRcon, PalworldRcon>();
 builder.Services.AddSingleton<RconService>();
@@ -262,6 +265,38 @@ api.MapPost("/servers/{id}/autostart", async (string id, AutostartRequest req, S
         return Results.BadRequest(new { error = "Server has no ScheduledTaskName set." });
     var ok = await local.SetAutostartAsync(def.ScheduledTaskName, req.Enabled, ct);
     return ok ? Results.Ok(new { enabled = req.Enabled }) : Results.StatusCode(502);
+});
+
+api.MapGet("/servers/{id}/mods", async (string id, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
+{
+    var def = reg.Get(id);
+    if (def is null) return Results.NotFound();
+    var mgr = mods.For(def);
+    if (mgr is null)
+        return Results.Ok(new ModListResponse(Array.Empty<ModInfo>(), false,
+            "No mod manager registered for this game yet. Manage mods on disk for now — see the game's mod-loader docs.", null));
+    var list = await mgr.ListAsync(def, ct);
+    return Results.Ok(new ModListResponse(list, true, null, mgr.ModsFolder(def)));
+});
+
+api.MapPost("/servers/{id}/mods/install", async (string id, ModInstallRequest req, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
+{
+    var def = reg.Get(id);
+    if (def is null) return Results.NotFound();
+    var mgr = mods.For(def);
+    if (mgr is null) return Results.BadRequest(new ModInstallResult(false, null, "Mod management not supported for this game."));
+    var result = await mgr.InstallFromUrlAsync(def, req.Url, req.DisplayName, ct);
+    return result.Ok ? Results.Ok(result) : Results.BadRequest(result);
+});
+
+api.MapDelete("/servers/{id}/mods/{modId}", async (string id, string modId, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
+{
+    var def = reg.Get(id);
+    if (def is null) return Results.NotFound();
+    var mgr = mods.For(def);
+    if (mgr is null) return Results.BadRequest(new { error = "Mod management not supported for this game." });
+    var ok = await mgr.UninstallAsync(def, modId, ct);
+    return ok ? Results.Ok(new { uninstalled = modId }) : Results.NotFound(new { error = "Mod not found." });
 });
 
 api.MapGet("/servers/{id}/rcon/players", async (string id, ServerRegistry reg, RconService rcon, CancellationToken ct) =>

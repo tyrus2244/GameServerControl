@@ -54,6 +54,31 @@ public sealed class AgentClient
         return JsonSerializer.Deserialize<DiscoverResponse>(s, JsonOpts) ?? new(Array.Empty<DiscoveredServer>(), Array.Empty<string>());
     }
 
+    public async Task<ModListResponse> ListModsAsync(string serverId, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{serverId}/mods", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<ModListResponse>(s, JsonOpts)
+            ?? new(Array.Empty<ModInfo>(), false, "no response", null);
+    }
+
+    public async Task<ModInstallResult> InstallModAsync(string serverId, string url, string? displayName, CancellationToken ct = default)
+    {
+        var json = JsonSerializer.Serialize(new ModInstallRequest(url, displayName), JsonOpts);
+        var r = await _http.PostAsync($"/api/servers/{serverId}/mods/install",
+            new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json"), ct);
+        var body = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<ModInstallResult>(body, JsonOpts)
+            ?? new ModInstallResult(false, null, "no response");
+    }
+
+    public async Task<bool> UninstallModAsync(string serverId, string modId, CancellationToken ct = default)
+    {
+        var r = await _http.DeleteAsync($"/api/servers/{serverId}/mods/{Uri.EscapeDataString(modId)}", ct);
+        return r.IsSuccessStatusCode;
+    }
+
     public async Task<ServerStatus?> GetStatusAsync(string id, CancellationToken ct = default)
     {
         var r = await _http.GetAsync($"/api/servers/{id}/status", ct);

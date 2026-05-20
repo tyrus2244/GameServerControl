@@ -101,6 +101,13 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
+    private void OpenModsWindow(ServerViewModel vm)
+    {
+        if (_client is null) { Toast("Not connected — open Settings first."); return; }
+        var win = new ModsWindow(_client, vm.Id, vm.Def.Name, Toast) { Owner = Application.Current.MainWindow };
+        win.Show();
+    }
+
     private void OpenLogWindow(ServerViewModel vm)
     {
         if (_client is null || _hub is null) { Toast("Not connected."); return; }
@@ -194,7 +201,8 @@ public sealed partial class MainViewModel : ObservableObject
                         vm => _ = DeleteServer(vm),
                         vm => _ = ConfigureServer(vm),
                         vm => OpenConsole(vm),
-                        vm => OpenLogWindow(vm));
+                        vm => OpenLogWindow(vm),
+                        vm => OpenModsWindow(vm));
                     Servers.Add(svm);
                     _ = svm.LoadAutostartAsync();
                 }
@@ -307,7 +315,8 @@ public sealed partial class MainViewModel : ObservableObject
                         vm => _ = DeleteServer(vm),
                         vm => _ = ConfigureServer(vm),
                         vm => OpenConsole(vm),
-                        vm => OpenLogWindow(vm));
+                        vm => OpenLogWindow(vm),
+                        vm => OpenModsWindow(vm));
                     Servers.Add(svm);
                     _ = svm.LoadAutostartAsync();
                 }

@@ -15,13 +15,15 @@ public sealed partial class ServerViewModel : ObservableObject
     private readonly Action<ServerViewModel> _onConfigureRequested;
     private readonly Action<ServerViewModel> _onConsoleRequested;
     private readonly Action<ServerViewModel> _onLogRequested;
+    private readonly Action<ServerViewModel>? _onModsRequested;
 
     public ServerDef Def { get; private set; }
 
     public ServerViewModel(ServerDef def, Func<AgentClient?> getClient, Action<string> toast,
         Action<ServerViewModel> onEditRequested, Action<ServerViewModel> onDeleteRequested,
         Action<ServerViewModel> onConfigureRequested, Action<ServerViewModel> onConsoleRequested,
-        Action<ServerViewModel> onLogRequested)
+        Action<ServerViewModel> onLogRequested,
+        Action<ServerViewModel>? onModsRequested = null)
     {
         _getClient = getClient;
         _toast = toast;
@@ -30,6 +32,7 @@ public sealed partial class ServerViewModel : ObservableObject
         _onConfigureRequested = onConfigureRequested;
         _onConsoleRequested = onConsoleRequested;
         _onLogRequested = onLogRequested;
+        _onModsRequested = onModsRequested;
         Def = def;
         Id = def.Id;
         Name = def.Name;
@@ -51,6 +54,9 @@ public sealed partial class ServerViewModel : ObservableObject
 
     [RelayCommand]
     private void Log() => _onLogRequested(this);
+
+    [RelayCommand]
+    private void Mods() => _onModsRequested?.Invoke(this);
 
     public bool HasRcon => Def.RconPort is > 0;
     public bool HasScheduledTask => !string.IsNullOrWhiteSpace(Def.ScheduledTaskName);

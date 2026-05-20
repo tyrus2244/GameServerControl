@@ -151,6 +151,7 @@
                                         <Button Content="⚙ Configure" Style="{StaticResource ActionButton}" Command="{Binding ConfigureCommand}"/>
                                         <Button Content="💬 Console" Style="{StaticResource ActionButton}" Command="{Binding ConsoleCommand}"/>
                                         <Button Content="📜 Log" Style="{StaticResource ActionButton}" Command="{Binding LogCommand}"/>
+                                        <Button Content="🧩 Mods" Style="{StaticResource ActionButton}" Command="{Binding ModsCommand}" ToolTip="Manage server-side mods (BepInEx plugins, etc.)"/>
                                         <Button Content="✓ Apply" Style="{StaticResource ActionButton}" Command="{Binding ApplyConfigCommand}"/>
                                         <ProgressBar IsIndeterminate="True" Width="120" Height="6" Margin="12,0,0,0" VerticalAlignment="Center"
                                                      Visibility="{Binding IsBusy, Converter={x:Static vm:BoolVisibilityConverter.Instance}}"/>
