@@ -64,26 +64,29 @@ public sealed class FicsitClient
     private static bool Contains(string? haystack, string needle) =>
         haystack is not null && haystack.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
+    // ficsit's LatestVersions is an object with three nullable Version slots — release / beta / alpha.
+    // We prefer the most-stable available.
+    private static FicsitVersion? LatestVersion(FicsitMod m) =>
+        m.LatestVersions?.Release ?? m.LatestVersions?.Beta ?? m.LatestVersions?.Alpha;
+
     private static bool IsServerSideOnly(FicsitMod m)
     {
-        var targets = m.LastVersion?.Targets ?? Array.Empty<FicsitTarget>();
-        if (targets.Length == 0) return false;
-        var hasServer = targets.Any(t => Contains(t.TargetName, "Server"));
-        // Plain client targets: "Windows", "Linux", "Mac" — anything that lacks "Server" is a client build.
-        var hasClient = targets.Any(t =>
-            !string.IsNullOrEmpty(t.TargetName) &&
-            !t.TargetName.Contains("Server", StringComparison.OrdinalIgnoreCase));
-        return hasServer && !hasClient;
+        var v = LatestVersion(m);
+        // Authoritative source: ficsit's required_on_remote flag — when false, the mod
+        // works without players installing anything locally.
+        return v is not null && !v.RequiredOnRemote;
     }
 
     private static ModSearchResult ToResult(FicsitMod m)
     {
-        var v = m.LastVersion;
+        var v = LatestVersion(m);
         // ficsit returns "link" as a relative URL like "/v1/version/<id>/download"
         var dl = string.IsNullOrEmpty(v?.Link) ? "" : "https://api.ficsit.app" + v.Link;
         return new ModSearchResult(
             Name: m.Name ?? m.ModReference ?? "(unknown)",
-            Owner: m.Creator?.Username ?? "",
+            // ficsit's API doesn't expose creator username in the mod object — only creator_id.
+            // The mod_reference (e.g. "AreaActions") is the closest user-recognizable identifier.
+            Owner: m.ModReference ?? "",
             Version: v?.Version ?? "?",
             Description: m.ShortDescription,
             IconUrl: m.Logo,
@@ -108,9 +111,14 @@ public sealed class FicsitClient
                 return again.Mods;
 
             // Fetch up to 100 mods. ficsit.app's getMods endpoint paginates; we ask for
-            // a single chunk and filter in-memory. NOTE: ficsit rejects extra filter keys
-            // (order_by/order/hidden) silently with zero results, so we keep the filter
-            // minimal (limit/offset) and sort/filter ourselves on the response.
+            // a single chunk and filter in-memory. Schema notes (learned from introspection):
+            //   - 'latestVersions' is an object with three nullable Version slots:
+            //     'release', 'beta', 'alpha'. We query all three and prefer the most
+            //     stable one available.
+            //   - 'required_on_remote' on a Version is the authoritative "do clients
+            //     need this too?" flag. False = server-side-only.
+            //   - 'creator' doesn't exist; only 'creator_id'. We surface mod_reference
+            //     as the owner-ish identifier in the UI.
             const string graphql = @"
             {
               getMods(filter: { limit: 100, offset: 0 }) {
@@ -122,12 +130,11 @@ public sealed class FicsitClient
                   logo
                   downloads
                   hidden
-                  creator { username }
                   tags { name }
-                  last_version {
-                    version
-                    link
-                    targets { targetName }
+                  latestVersions {
+                    release { version link required_on_remote targets { targetName } }
+                    beta    { version link required_on_remote targets { targetName } }
+                    alpha   { version link required_on_remote targets { targetName } }
                   }
                 }
               }
@@ -178,18 +185,24 @@ public sealed class FicsitClient
         [JsonPropertyName("logo")] public string? Logo { get; set; }
         [JsonPropertyName("downloads")] public long Downloads { get; set; }
         [JsonPropertyName("hidden")] public bool Hidden { get; set; }
-        [JsonPropertyName("creator")] public FicsitCreator? Creator { get; set; }
         [JsonPropertyName("tags")] public FicsitTag[]? Tags { get; set; }
-        [JsonPropertyName("last_version")] public FicsitVersion? LastVersion { get; set; }
+        [JsonPropertyName("latestVersions")] public FicsitLatestVersions? LatestVersions { get; set; }
     }
 
-    public sealed class FicsitCreator { [JsonPropertyName("username")] public string? Username { get; set; } }
     public sealed class FicsitTag      { [JsonPropertyName("name")] public string? Name { get; set; } }
+
+    public sealed class FicsitLatestVersions
+    {
+        [JsonPropertyName("release")] public FicsitVersion? Release { get; set; }
+        [JsonPropertyName("beta")] public FicsitVersion? Beta { get; set; }
+        [JsonPropertyName("alpha")] public FicsitVersion? Alpha { get; set; }
+    }
 
     public sealed class FicsitVersion
     {
         [JsonPropertyName("version")] public string? Version { get; set; }
         [JsonPropertyName("link")] public string? Link { get; set; }
+        [JsonPropertyName("required_on_remote")] public bool RequiredOnRemote { get; set; }
         [JsonPropertyName("targets")] public FicsitTarget[]? Targets { get; set; }
     }
 
