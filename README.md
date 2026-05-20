@@ -37,7 +37,15 @@
 - **Per-game config editor** — curated schemas (with units, sliders, dropdowns, tooltips) for Valheim · Palworld · Windrose · Satisfactory · ARK · Rust · 7DTD · Terraria · DST · Project Zomboid · Minecraft.
 - **Auto-discovered settings** — when a game ships a defaults file or admin API (Palworld's `DefaultPalWorldSettings.ini`, Satisfactory's `GetAdvancedGameSettings`), the editor surfaces *every* setting beyond the curated ones. Palworld jumps from 53 curated fields to **109 total**.
 - **Live Satisfactory Admin API integration** — claim server, rename, set client password, toggle all 13 Advanced Game Settings (NoPower, GodMode, FlightMode, StartingTier, …) without restarting. Applies instantly. Also surfaces the **current session name** as a read-only "Session ID" (analogous to Windrose's invite code).
-- **Backups** — Hyper-V checkpoints for VMs, zipped save-dir archives for bare-metal, with optional scheduled cadence.
+- **📦 Backups + restore** — Hyper-V checkpoints for VMs, zipped save-dir archives for bare-metal. Per-server **Backups window** lists every archive, lets you restore (with auto safety-snapshot) or delete with two clicks.
+- **⏰ Scheduled maintenance** — daily restart / weekly SteamCMD update / hourly backup, wired into Windows Task Scheduler from the **Schedule window** per server. Linux agents get the same API surface (use systemd timers).
+- **🔔 Discord webhook alerts** — set a webhook URL per server; the agent posts colored embeds on start / stop / **crash detection** (Running→NotRunning without a Stop request) / backup completed.
+- **🔄 Mod auto-update + dependencies** — Thunderstore `manifest.json` deps are resolved + installed recursively. The Mods tab has **Check for updates** and **Update all** buttons that walk every installed mod back to its source URL and re-installs the latest.
+- **👥 Live player management** — RCON-driven player list (auto-refresh every 10s while open) with kick/ban/broadcast/shutdown built in.
+- **📊 Resource Monitor** — per-server live CPU + RAM polyline charts with 5 minutes of rolling history.
+- **🔑 Per-user tokens + roles** — multi-token store in `tokens.json` with `Admin` / `ReadOnly` roles. State-mutating verbs (POST/PUT/DELETE) require Admin; GETs accept any authenticated token. Manage from the **Tokens window** in the client.
+- **🛰 Multi-host federation** — connect to multiple agents at once. All their servers show up in one unified dashboard with an "agent" badge on each card; actions automatically route to the right agent.
+- **📱 Real responsive web UI** — drawer-based mobile-friendly UI at `/` of the agent. Player kick/ban, mod install/uninstall/update, backup restore — all accessible from a browser without the desktop app.
 - **SteamCMD updates** — one button validates + updates any Steam-app-ID server.
 - **Live status + log tail** via SignalR.
 - **RCON** — Source-engine RCON for Palworld; pluggable `IGameRcon` for adding more.

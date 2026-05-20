@@ -8,55 +8,69 @@ namespace GameServerControl.Client.ViewModels;
 
 public sealed partial class ServerViewModel : ObservableObject
 {
+    public sealed record Callbacks(
+        Action<ServerViewModel> Edit,
+        Action<ServerViewModel> Delete,
+        Action<ServerViewModel> Configure,
+        Action<ServerViewModel> Console,
+        Action<ServerViewModel> Log,
+        Action<ServerViewModel>? Mods = null,
+        Action<ServerViewModel>? Backups = null,
+        Action<ServerViewModel>? Schedule = null,
+        Action<ServerViewModel>? Stats = null);
+
     private readonly Func<AgentClient?> _getClient;
     private readonly Action<string> _toast;
-    private readonly Action<ServerViewModel> _onEditRequested;
-    private readonly Action<ServerViewModel> _onDeleteRequested;
-    private readonly Action<ServerViewModel> _onConfigureRequested;
-    private readonly Action<ServerViewModel> _onConsoleRequested;
-    private readonly Action<ServerViewModel> _onLogRequested;
-    private readonly Action<ServerViewModel>? _onModsRequested;
+    private readonly Callbacks _cb;
 
     public ServerDef Def { get; private set; }
+    /// <summary>Which agent owns this server — empty for legacy single-agent flows.</summary>
+    public string AgentId { get; }
+    /// <summary>Display name of the owning agent (e.g. "Home server"). Shown on the card.</summary>
+    public string AgentNickname { get; }
+    public bool HasMultipleAgents { get; set; }
 
-    public ServerViewModel(ServerDef def, Func<AgentClient?> getClient, Action<string> toast,
-        Action<ServerViewModel> onEditRequested, Action<ServerViewModel> onDeleteRequested,
-        Action<ServerViewModel> onConfigureRequested, Action<ServerViewModel> onConsoleRequested,
-        Action<ServerViewModel> onLogRequested,
-        Action<ServerViewModel>? onModsRequested = null)
+    public ServerViewModel(ServerDef def, Func<AgentClient?> getClient, Action<string> toast, Callbacks callbacks,
+        string agentId = "", string agentNickname = "")
     {
         _getClient = getClient;
         _toast = toast;
-        _onEditRequested = onEditRequested;
-        _onDeleteRequested = onDeleteRequested;
-        _onConfigureRequested = onConfigureRequested;
-        _onConsoleRequested = onConsoleRequested;
-        _onLogRequested = onLogRequested;
-        _onModsRequested = onModsRequested;
+        _cb = callbacks;
         Def = def;
         Id = def.Id;
         Name = def.Name;
         VmName = def.VmName;
         GameType = def.GameType.ToString();
+        AgentId = agentId;
+        AgentNickname = agentNickname;
     }
 
     [RelayCommand]
-    private void Edit() => _onEditRequested(this);
+    private void Edit() => _cb.Edit(this);
 
     [RelayCommand]
-    private void Delete() => _onDeleteRequested(this);
+    private void Delete() => _cb.Delete(this);
 
     [RelayCommand]
-    private void Configure() => _onConfigureRequested(this);
+    private void Configure() => _cb.Configure(this);
 
     [RelayCommand]
-    private void Console() => _onConsoleRequested(this);
+    private void Console() => _cb.Console(this);
 
     [RelayCommand]
-    private void Log() => _onLogRequested(this);
+    private void Log() => _cb.Log(this);
 
     [RelayCommand]
-    private void Mods() => _onModsRequested?.Invoke(this);
+    private void Mods() => _cb.Mods?.Invoke(this);
+
+    [RelayCommand]
+    private void Backups() => _cb.Backups?.Invoke(this);
+
+    [RelayCommand]
+    private void Schedule() => _cb.Schedule?.Invoke(this);
+
+    [RelayCommand]
+    private void Stats() => _cb.Stats?.Invoke(this);
 
     public bool HasRcon => Def.RconPort is > 0;
     public bool HasScheduledTask => !string.IsNullOrWhiteSpace(Def.ScheduledTaskName);

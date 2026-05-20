@@ -133,11 +133,19 @@
             <TabItem Header="📦 Installed">
                 <Grid Margin="8">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
+                    <!-- Update toolbar -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="🔄 Check for updates" Style="{StaticResource ActionButton}" Click="CheckUpdates_Click"/>
+                        <Button Content="⬆ Update all" Style="{StaticResource ActionButton}" Click="UpdateAll_Click" Margin="6,0,0,0"
+                                x:Name="UpdateAllBtn" IsEnabled="False"/>
+                        <TextBlock x:Name="UpdatesSummary" VerticalAlignment="Center" Margin="14,0,0,0" Foreground="{StaticResource TextDimBrush}"/>
+                    </StackPanel>
                     <!-- Installed list -->
-                    <Border Grid.Row="0" Background="{StaticResource BgBrush0}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                    <Border Grid.Row="1" Background="{StaticResource BgBrush0}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
                         <Grid>
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <ItemsControl x:Name="ModList">
@@ -180,7 +188,7 @@
                     </Border>
 
                     <!-- Power user: install from URL -->
-                    <Border Grid.Row="1" Background="{StaticResource BgBrush2}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,10,0,0">
+                    <Border Grid.Row="2" Background="{StaticResource BgBrush2}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,10,0,0">
                         <StackPanel>
                             <TextBlock Text="Advanced: install from URL" FontWeight="SemiBold" Margin="0,0,0,4"/>
                             <TextBlock Text="For mods not on Thunderstore — paste any direct .zip URL." FontSize="11" Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,6"/>

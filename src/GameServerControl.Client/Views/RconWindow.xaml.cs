@@ -13,6 +13,7 @@ public partial class RconWindow : Window
         InitializeComponent();
         DarkTitleBar.Apply(this);
         DataContext = new RconViewModel(client, server);
+        Closed += (_, _) => (DataContext as RconViewModel)?.Dispose();
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

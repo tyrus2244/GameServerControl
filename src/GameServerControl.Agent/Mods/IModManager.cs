@@ -29,6 +29,14 @@ public interface IModManager
     /// </summary>
     Task<ModSearchResult[]> SearchAsync(ServerDef def, string query, int limit, bool serverSideOnly, CancellationToken ct);
     string? MarketplaceSource(ServerDef def);
+
+    /// <summary>
+    /// Compare each installed mod's recorded version against the latest known in this game's marketplace.
+    /// Returns one entry per upgradeable mod. Default implementation returns empty (managers without
+    /// version metadata can't tell). Managers that store both a Source URL and Version override this.
+    /// </summary>
+    Task<ModUpdateInfo[]> CheckUpdatesAsync(ServerDef def, CancellationToken ct) =>
+        Task.FromResult(Array.Empty<ModUpdateInfo>());
 }
 
 /// <summary>

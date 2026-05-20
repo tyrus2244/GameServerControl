@@ -1,0 +1,85 @@
+<Window x:Class="GameServerControl.Client.Views.ScheduleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Schedule"
+        Width="620" Height="520"
+        Background="{StaticResource BgBrush0}"
+        Foreground="{StaticResource TextBrush}"
+        TextElement.Foreground="{StaticResource TextBrush}"
+        TextElement.FontFamily="Segoe UI"
+        TextElement.FontSize="13"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock x:Name="HeaderText" Text="Scheduled maintenance" FontSize="20" FontWeight="Bold"/>
+            <TextBlock Text="Daily restart, weekly SteamCMD update, and hourly backup, wired into Windows Task Scheduler. Times are in the agent host's local time."
+                       Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+            <TextBlock x:Name="UnsupportedText" Margin="0,8,0,0" Foreground="{StaticResource WarnBrush}"
+                       Text="This host does not support scheduled tasks (Linux agents use a systemd timer instead — see README)."
+                       TextWrapping="Wrap" Visibility="Collapsed"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <!-- Daily restart -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <CheckBox x:Name="DailyEnabled" Content="Daily restart" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal" Margin="22,8,0,0" IsEnabled="{Binding ElementName=DailyEnabled, Path=IsChecked}">
+                        <TextBlock Text="At hour (0-23):" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox x:Name="DailyHour" Width="50" Text="5"/>
+                        <TextBlock Text=":00 local" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="{StaticResource TextDimBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Weekly update -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <CheckBox x:Name="WeeklyEnabled" Content="Weekly SteamCMD update" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal" Margin="22,8,0,0" IsEnabled="{Binding ElementName=WeeklyEnabled, Path=IsChecked}">
+                        <TextBlock Text="Day:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="WeeklyDay" Width="120" SelectedIndex="3">
+                            <ComboBoxItem Content="Sunday"/>
+                            <ComboBoxItem Content="Monday"/>
+                            <ComboBoxItem Content="Tuesday"/>
+                            <ComboBoxItem Content="Wednesday"/>
+                            <ComboBoxItem Content="Thursday"/>
+                            <ComboBoxItem Content="Friday"/>
+                            <ComboBoxItem Content="Saturday"/>
+                        </ComboBox>
+                        <TextBlock Text="at hour:" VerticalAlignment="Center" Margin="14,0,8,0"/>
+                        <TextBox x:Name="WeeklyHour" Width="50" Text="4"/>
+                        <TextBlock Text=":00" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="{StaticResource TextDimBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Hourly backup -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <CheckBox x:Name="HourlyEnabled" Content="Hourly backup" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal" Margin="22,8,0,0" IsEnabled="{Binding ElementName=HourlyEnabled, Path=IsChecked}">
+                        <TextBlock Text="At minute (0-59):" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox x:Name="HourlyMinute" Width="50" Text="0"/>
+                        <TextBlock Text="of each hour" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="{StaticResource TextDimBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <TextBlock Grid.Row="2" x:Name="StatusText" Margin="0,12,0,0" Foreground="{StaticResource TextDimBrush}"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Disable All" Style="{StaticResource DangerButton}" Click="DisableAll_Click"/>
+            <Button Content="Save" Style="{StaticResource ActionButton}" Click="Save_Click" Margin="6,0,0,0" IsDefault="True"/>
+            <Button Content="Close" Style="{StaticResource ActionButton}" Click="Close_Click" Margin="6,0,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>

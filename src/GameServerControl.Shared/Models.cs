@@ -62,7 +62,8 @@ public record ServerDef(
     string? RconPassword = null,
     HostingMode HostingMode = HostingMode.Vm,           // back-compat default for existing servers.json entries
     string? ScheduledTaskName = null,                   // if set, Start/Stop drive Windows Task Scheduler instead of Process.Start
-    string[]? StopProcessNames = null                   // extra .exe leaf names to kill on Stop (in addition to GuestExePath's leaf)
+    string[]? StopProcessNames = null,                  // extra .exe leaf names to kill on Stop (in addition to GuestExePath's leaf)
+    string? DiscordWebhookUrl = null                    // optional: POST lifecycle events (start/stop/crash/backup/update) here
 );
 
 public record ServerStatus(
@@ -98,6 +99,18 @@ public record BackupInfo(
     string CheckpointName,
     long? SizeBytes
 );
+
+public record DiscordWebhookTestRequest(string WebhookUrl);
+
+public enum TokenRole
+{
+    Admin,
+    ReadOnly
+}
+
+public record CreateTokenRequest(string Id, string Name, TokenRole Role);
+
+public record TokenMetadata(string Id, string Name, string Token, TokenRole Role, DateTimeOffset CreatedAt);
 
 public record MaintenanceSchedule(
     bool DailyRestartEnabled = false,

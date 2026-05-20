@@ -28,6 +28,7 @@ public sealed partial class ServerEditorViewModel : ObservableObject
     [ObservableProperty] private string rconPassword = "";
     [ObservableProperty] private string scheduledTaskName = "";
     [ObservableProperty] private string stopProcessNamesText = "";
+    [ObservableProperty] private string discordWebhookUrl = "";
     [ObservableProperty] private string? selectedPresetKey;
     [ObservableProperty] private string? validationError;
 
@@ -100,6 +101,7 @@ public sealed partial class ServerEditorViewModel : ObservableObject
         RconPassword = existing.RconPassword ?? "";
         ScheduledTaskName = existing.ScheduledTaskName ?? "";
         StopProcessNamesText = string.Join("\n", existing.StopProcessNames ?? Array.Empty<string>());
+        DiscordWebhookUrl = existing.DiscordWebhookUrl ?? "";
         SelectedPresetKey = null;
     }
 
@@ -199,7 +201,8 @@ public sealed partial class ServerEditorViewModel : ObservableObject
             RconPassword: string.IsNullOrWhiteSpace(RconPassword) ? null : RconPassword,
             HostingMode: HostingMode,
             ScheduledTaskName: string.IsNullOrWhiteSpace(ScheduledTaskName) ? null : ScheduledTaskName.Trim(),
-            StopProcessNames: SplitLines(StopProcessNamesText) is { Length: > 0 } sn ? sn : null);
+            StopProcessNames: SplitLines(StopProcessNamesText) is { Length: > 0 } sn ? sn : null,
+            DiscordWebhookUrl: string.IsNullOrWhiteSpace(DiscordWebhookUrl) ? null : DiscordWebhookUrl.Trim());
         return true;
     }
 

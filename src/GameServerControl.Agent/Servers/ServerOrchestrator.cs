@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Text.Json.Nodes;
 using GameServerControl.Agent.Hubs;
 using GameServerControl.Agent.Hyperv;
+using GameServerControl.Agent.Notifications;
 using GameServerControl.Shared;
 using Microsoft.AspNetCore.SignalR;
 
@@ -12,12 +13,16 @@ namespace GameServerControl.Agent.Servers;
 public sealed class ServerOrchestrator
 {
     private readonly ConcurrentDictionary<int, (TimeSpan cpu, DateTime at)> _cpuSamples = new();
+    // Per-server hint that we deliberately stopped the process — used so RefreshStatusAsync
+    // doesn't emit a "Crashed" Discord alert on a clean stop.
+    private readonly ConcurrentDictionary<string, bool> _stopRequested = new();
     private readonly HypervService _hv;
     private readonly GuestProcessService _guest;
     private readonly LocalProcessService _local;
     private readonly ServerRegistry _registry;
     private readonly StatusTracker _tracker;
     private readonly IHubContext<StatusHub> _hub;
+    private readonly DiscordNotifier _discord;
     private readonly IConfiguration _cfg;
     private readonly ILogger<ServerOrchestrator> _logger;
 
@@ -28,6 +33,7 @@ public sealed class ServerOrchestrator
         ServerRegistry registry,
         StatusTracker tracker,
         IHubContext<StatusHub> hub,
+        DiscordNotifier discord,
         IConfiguration cfg,
         ILogger<ServerOrchestrator> logger)
     {
@@ -37,6 +43,7 @@ public sealed class ServerOrchestrator
         _registry = registry;
         _tracker = tracker;
         _hub = hub;
+        _discord = discord;
         _cfg = cfg;
         _logger = logger;
     }
@@ -127,6 +134,9 @@ public sealed class ServerOrchestrator
         // Per-game metadata (e.g. Windrose InviteCode)
         var metadata = await BuildMetadataAsync(def, ct);
 
+        // Snapshot previous state so we can detect Running -> NotRunning transitions (= crash).
+        var prevState = _tracker.Get(id).ProcessState;
+
         var status = _tracker.Update(id, cur => cur with
         {
             VmState = vmState,
@@ -137,6 +147,19 @@ public sealed class ServerOrchestrator
             Metadata = metadata
         });
         await BroadcastAsync(status);
+
+        // Crash detection: was Running, now NotRunning, and Stop wasn't requested.
+        // Fires at most once per crash because the next refresh will see prev == NotRunning.
+        if (prevState == ProcessState.Running && procState == ProcessState.NotRunning)
+        {
+            var wasStop = _stopRequested.TryRemove(id, out _);
+            if (!wasStop && _discord.IsConfigured(def))
+            {
+                _ = _discord.SendAsync(def, DiscordNotifier.Kind.Down,
+                    "💥 Server crashed",
+                    $"{def.Name} went from Running to NotRunning without a stop request.", CancellationToken.None);
+            }
+        }
         return status;
     }
 
@@ -242,6 +265,7 @@ public sealed class ServerOrchestrator
 
         _tracker.Update(def.Id, s => s with { ProcessState = ProcessState.Running, PidInGuest = pid, StartedAt = DateTimeOffset.UtcNow, LastError = null });
         await RefreshStatusAsync(def.Id, ct);
+        _ = _discord.SendAsync(def, DiscordNotifier.Kind.Up, "▶ Server started", $"{def.Name} is up (pid={pid}).", ct);
         return new ActionResult(true, $"Started (pid={pid})", corr);
     }
 
@@ -290,6 +314,7 @@ public sealed class ServerOrchestrator
 
         _tracker.Update(def.Id, s => s with { ProcessState = ProcessState.Running, PidInGuest = pid, StartedAt = DateTimeOffset.UtcNow, LastError = null });
         await RefreshStatusAsync(def.Id, ct);
+        _ = _discord.SendAsync(def, DiscordNotifier.Kind.Up, "▶ Server started", $"{def.Name} is up (pid={pid}).", ct);
         return new ActionResult(true, $"Started (pid={pid})", corr);
     }
 
@@ -302,6 +327,7 @@ public sealed class ServerOrchestrator
         if (def is null) return new ActionResult(false, "Unknown server", corr);
 
         await LogAsync(id, "orch", $"Stop requested (mode={def.HostingMode}, stopVm={stopVm}, force={force})");
+        _stopRequested[id] = true;   // suppress the crash-detection Discord ping
 
         if (def.HostingMode == HostingMode.BareMetal)
         {
@@ -326,6 +352,7 @@ public sealed class ServerOrchestrator
 
             _tracker.Update(id, s => s with { ProcessState = ProcessState.NotRunning, PidInGuest = null });
             await RefreshStatusAsync(id, ct);
+            _ = _discord.SendAsync(def, DiscordNotifier.Kind.Down, "■ Server stopped", $"{def.Name} stopped via dashboard.", ct);
             return new ActionResult(true, "Stopped", corr);
         }
 
@@ -345,6 +372,7 @@ public sealed class ServerOrchestrator
 
         _tracker.Update(id, s => s with { ProcessState = ProcessState.NotRunning, PidInGuest = null });
         await RefreshStatusAsync(id, ct);
+        _ = _discord.SendAsync(def, DiscordNotifier.Kind.Down, "■ Server stopped", $"{def.Name} stopped via dashboard.", ct);
         return new ActionResult(true, "Stopped", corr);
     }
 
@@ -374,6 +402,7 @@ public sealed class ServerOrchestrator
 
         _tracker.Update(id, s => s with { LastBackupAt = DateTimeOffset.UtcNow });
         await RefreshStatusAsync(id, ct);
+        _ = _discord.SendAsync(def, DiscordNotifier.Kind.Info, "📦 Checkpoint created", name, ct);
         return new ActionResult(true, "Checkpoint created: " + name, corr);
     }
 
@@ -430,6 +459,9 @@ public sealed class ServerOrchestrator
 
         _tracker.Update(def.Id, s => s with { LastBackupAt = DateTimeOffset.UtcNow });
         await RefreshStatusAsync(def.Id, ct);
+        _ = _discord.SendAsync(def, DiscordNotifier.Kind.Info,
+            "📦 Backup created",
+            $"{Path.GetFileName(zipPath)} ({size / 1024 / 1024} MB)", ct);
         return new ActionResult(true, $"Backup created: {zipPath} ({size / 1024 / 1024} MB) — kept {Math.Min(keep, new DirectoryInfo(dest).GetFiles("*.zip").Length)}", corr);
     }
 

@@ -7,15 +7,24 @@ namespace GameServerControl.Agent.Auth;
 
 public sealed class TokenAuthOptions : AuthenticationSchemeOptions
 {
+    // Legacy field — kept for back-compat. The actual token list now lives in TokenRegistry,
+    // which falls back to <c>Agent:ApiToken</c> automatically.
     public string Token { get; set; } = "";
 }
 
 public sealed class TokenAuthHandler : AuthenticationHandler<TokenAuthOptions>
 {
     public const string SchemeName = "Token";
+    public const string RoleClaim = "gsc:role";
+    public const string TokenIdClaim = "gsc:tokenId";
 
-    public TokenAuthHandler(IOptionsMonitor<TokenAuthOptions> options, ILoggerFactory logger, UrlEncoder encoder)
-        : base(options, logger, encoder) { }
+    private readonly TokenRegistry _registry;
+
+    public TokenAuthHandler(IOptionsMonitor<TokenAuthOptions> options, ILoggerFactory logger, UrlEncoder encoder, TokenRegistry registry)
+        : base(options, logger, encoder)
+    {
+        _registry = registry;
+    }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -33,21 +42,19 @@ public sealed class TokenAuthHandler : AuthenticationHandler<TokenAuthOptions>
         if (string.IsNullOrEmpty(presented))
             return Task.FromResult(AuthenticateResult.NoResult());
 
-        var expected = Options.Token ?? "";
-        if (!CryptoEquals(presented, expected))
+        var match = _registry.Lookup(presented);
+        if (match is null)
             return Task.FromResult(AuthenticateResult.Fail("invalid token"));
 
-        var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "operator") }, Scheme.Name);
+        var (id, name, role) = match.Value;
+        var identity = new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Name, name),
+            new Claim(TokenIdClaim, id),
+            new Claim(RoleClaim, role.ToString())
+        }, Scheme.Name);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme.Name);
         return Task.FromResult(AuthenticateResult.Success(ticket));
-    }
-
-    private static bool CryptoEquals(string a, string b)
-    {
-        if (a.Length != b.Length) return false;
-        var diff = 0;
-        for (var i = 0; i < a.Length; i++) diff |= a[i] ^ b[i];
-        return diff == 0;
     }
 }

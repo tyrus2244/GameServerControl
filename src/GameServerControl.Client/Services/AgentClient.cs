@@ -79,6 +79,24 @@ public sealed class AgentClient
         return r.IsSuccessStatusCode;
     }
 
+    public async Task<ModUpdatesResponse> CheckModUpdatesAsync(string serverId, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{serverId}/mods/updates", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<ModUpdatesResponse>(s, JsonOpts)
+            ?? new ModUpdatesResponse(Array.Empty<ModUpdateInfo>(), false, "no response");
+    }
+
+    public async Task<ModInstallResult> UpdateModAsync(string serverId, string modId, string url, string? displayName, CancellationToken ct = default)
+    {
+        var json = JsonSerializer.Serialize(new ModInstallRequest(url, displayName), JsonOpts);
+        var r = await _http.PostAsync($"/api/servers/{serverId}/mods/{Uri.EscapeDataString(modId)}/update",
+            new StringContent(json, System.Text.Encoding.UTF8, "application/json"), ct);
+        var body = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<ModInstallResult>(body, JsonOpts) ?? new ModInstallResult(false, null, "no response");
+    }
+
     public async Task<ModSearchResponse> SearchModsAsync(string serverId, string query, int limit = 30, bool serverSideOnly = true, CancellationToken ct = default)
     {
         var u = $"/api/servers/{serverId}/mods/search?q={Uri.EscapeDataString(query)}&limit={limit}&serverSideOnly={(serverSideOnly ? "true" : "false")}";
@@ -165,6 +183,87 @@ public sealed class AgentClient
         if (!r.IsSuccessStatusCode)
             return new RconResponse(false, "", $"HTTP {(int)r.StatusCode}: {s}");
         return JsonSerializer.Deserialize<RconResponse>(s, JsonOpts) ?? new RconResponse(false, "", "Empty response");
+    }
+
+    public async Task<List<BackupInfo>> ListBackupsAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{id}/backups", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<List<BackupInfo>>(s, JsonOpts) ?? new();
+    }
+
+    public async Task<ActionResult> RestoreBackupAsync(string id, string backupName, CancellationToken ct = default)
+    {
+        var r = await _http.PostAsync($"/api/servers/{id}/backups/{Uri.EscapeDataString(backupName)}/restore",
+            new StringContent(""), ct);
+        var s = await r.Content.ReadAsStringAsync(ct);
+        if (!r.IsSuccessStatusCode)
+            return new ActionResult(false, $"HTTP {(int)r.StatusCode}: {s}", null);
+        return JsonSerializer.Deserialize<ActionResult>(s, JsonOpts) ?? new ActionResult(false, "Empty response", null);
+    }
+
+    public async Task<bool> DeleteBackupAsync(string id, string backupName, CancellationToken ct = default)
+    {
+        var r = await _http.DeleteAsync($"/api/servers/{id}/backups/{Uri.EscapeDataString(backupName)}", ct);
+        return r.IsSuccessStatusCode;
+    }
+
+    public async Task<MaintenanceSchedule?> GetScheduleAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync($"/api/servers/{id}/schedule", ct);
+        if (!r.IsSuccessStatusCode) return null;
+        var s = await r.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(s) || s == "null") return null;
+        return JsonSerializer.Deserialize<MaintenanceSchedule>(s, JsonOpts);
+    }
+
+    public async Task SetScheduleAsync(string id, MaintenanceSchedule schedule, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(schedule, JsonOpts);
+        var r = await _http.PostAsync($"/api/servers/{id}/schedule",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        if (!r.IsSuccessStatusCode)
+            throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {await r.Content.ReadAsStringAsync(ct)}");
+    }
+
+    public async Task<List<TokenMetadata>> ListTokensAsync(CancellationToken ct = default)
+    {
+        var r = await _http.GetAsync("/api/tokens", ct);
+        r.EnsureSuccessStatusCode();
+        var s = await r.Content.ReadAsStringAsync(ct);
+        return JsonSerializer.Deserialize<List<TokenMetadata>>(s, JsonOpts) ?? new();
+    }
+
+    public async Task<TokenMetadata> CreateTokenAsync(string id, string name, TokenRole role, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(new CreateTokenRequest(id, name, role), JsonOpts);
+        var r = await _http.PostAsync("/api/tokens",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        var s = await r.Content.ReadAsStringAsync(ct);
+        if (!r.IsSuccessStatusCode) throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {s}");
+        return JsonSerializer.Deserialize<TokenMetadata>(s, JsonOpts) ?? throw new InvalidOperationException("Empty body");
+    }
+
+    public async Task<bool> DeleteTokenAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.DeleteAsync($"/api/tokens/{Uri.EscapeDataString(id)}", ct);
+        return r.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> TestDiscordWebhookAsync(string webhookUrl, CancellationToken ct = default)
+    {
+        var body = JsonSerializer.Serialize(new DiscordWebhookTestRequest(webhookUrl), JsonOpts);
+        var r = await _http.PostAsync("/api/discord/test",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), ct);
+        return r.IsSuccessStatusCode;
+    }
+
+    public async Task ClearScheduleAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _http.DeleteAsync($"/api/servers/{id}/schedule", ct);
+        if (!r.IsSuccessStatusCode)
+            throw new InvalidOperationException($"HTTP {(int)r.StatusCode}: {await r.Content.ReadAsStringAsync(ct)}");
     }
 
     public sealed record AutostartStatus(bool Supported, bool? Enabled);

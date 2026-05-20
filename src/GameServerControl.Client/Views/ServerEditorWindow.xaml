@@ -239,6 +239,23 @@
                               AcceptsReturn="True" Height="64" VerticalScrollBarVisibility="Auto"
                               FontFamily="Consolas, Cascadia Mono"/>
                 </Grid>
+
+                <TextBlock Text="Notifications" FontWeight="SemiBold" Margin="0,12,0,8" Foreground="{StaticResource InfoBrush}"/>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,4,0,0">
+                        <TextBlock Text="Discord webhook"/>
+                        <TextBlock Text="Optional. Server lifecycle events post here." Foreground="{StaticResource TextDimBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBox  Grid.Column="1" Text="{Binding DiscordWebhookUrl, UpdateSourceTrigger=PropertyChanged}"
+                              FontFamily="Consolas, Cascadia Mono"/>
+                    <Button   Grid.Column="2" Content="Send test" Style="{StaticResource ActionButton}"
+                              Click="TestDiscord_Click" Margin="8,0,0,0"/>
+                </Grid>
             </StackPanel>
         </ScrollViewer>
 

@@ -172,9 +172,10 @@ public sealed class ValheimBepInExModManager : IModManager
                 modId = Path.GetFileName(copyDlls[0]);
             }
 
-            // 5) Try to extract a version from a Thunderstore manifest.json if present
+            // 5) Try to extract a version + dependencies from a Thunderstore manifest.json if present
             string? version = null;
             string? finalName = displayName;
+            string[] dependencies = Array.Empty<string>();
             var manifest = Path.Combine(extractPath, "manifest.json");
             if (File.Exists(manifest))
             {
@@ -183,6 +184,12 @@ public sealed class ValheimBepInExModManager : IModManager
                     var json = JsonNode.Parse(await File.ReadAllTextAsync(manifest, ct));
                     version = json?["version_number"]?.ToString();
                     finalName ??= json?["name"]?.ToString();
+                    // dependencies: ["Owner-Name-Version", …]
+                    if (json?["dependencies"] is JsonArray deps)
+                        dependencies = deps
+                            .Select(d => d?.ToString() ?? "")
+                            .Where(s => !string.IsNullOrWhiteSpace(s))
+                            .ToArray();
                 }
                 catch { /* tolerate broken manifests */ }
             }
@@ -198,6 +205,39 @@ public sealed class ValheimBepInExModManager : IModManager
                 SizeBytes: installedFiles.Select(f => new FileInfo(Path.Combine(def.GuestWorkingDir, f)).Length).Sum(),
                 Files: installedFiles.ToArray());
             UpdateMetadata(def, m => m[modId] = ToSidecar(info));
+
+            // 7) Resolve and install Thunderstore dependencies. We chase deps one level deep here;
+            // the recursive InstallFromUrlAsync call will handle any transitive deps each pulls in.
+            // Cycle/duplicate protection: if the dep's manifest folder is already on disk under plugins/, skip.
+            foreach (var dep in dependencies)
+            {
+                ct.ThrowIfCancellationRequested();
+                // dep format: "Owner-Name-Version"; the version is the *required minimum*, but in
+                // practice authors specify the version they tested with. We install the *latest*
+                // published, which is what nearly every mod manager does (Thunderstore CLI included).
+                var parts = dep.Split('-');
+                if (parts.Length < 3) continue;
+                var depOwner = parts[0];
+                // Name can contain dashes — everything except first and last token belongs to it.
+                var depName = string.Join('-', parts.Skip(1).Take(parts.Length - 2));
+                var depKey = SanitizeFolderName(depName);
+                if (Directory.Exists(Path.Combine(modsDir, depKey)) ||
+                    File.Exists(Path.Combine(modsDir, depKey + ".dll")))
+                {
+                    _logger.LogDebug("Dependency {Dep} already installed — skipping", dep);
+                    continue;
+                }
+                var pkg = await _thunderstore.FindPackageAsync("valheim", depOwner, depName, ct);
+                var dlUrl = pkg?.Versions?.FirstOrDefault()?.DownloadUrl;
+                if (string.IsNullOrEmpty(dlUrl))
+                {
+                    _logger.LogWarning("Dependency {Dep} not found in Thunderstore — skipping", dep);
+                    continue;
+                }
+                _logger.LogInformation("Installing dependency {Dep}", dep);
+                try { await InstallFromUrlAsync(def, dlUrl, depName, ct); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Dependency install failed for {Dep}", dep); }
+            }
 
             return new ModInstallResult(true, info, null);
         }
@@ -251,6 +291,37 @@ public sealed class ValheimBepInExModManager : IModManager
             try { Directory.Delete(folderPath, recursive: true); ok = true; } catch { /* ignore */ }
         }
         return Task.FromResult(ok);
+    }
+
+    // ---- update check ----
+
+    public async Task<ModUpdateInfo[]> CheckUpdatesAsync(ServerDef def, CancellationToken ct)
+    {
+        var installed = await ListAsync(def, ct);
+        var updates = new List<ModUpdateInfo>();
+        foreach (var m in installed)
+        {
+            if (string.IsNullOrEmpty(m.Source)) continue;
+            // Source URL points back to a Thunderstore download. Parse it to find the canonical package.
+            var parsed = ThunderstoreClient.ParseDownloadUrl(m.Source);
+            if (parsed is null) continue;
+            var (owner, name) = parsed.Value;
+            var pkg = await _thunderstore.FindPackageAsync("valheim", owner, name, ct);
+            var latest = pkg?.Versions?.FirstOrDefault();
+            if (latest?.VersionNumber is null || latest.DownloadUrl is null) continue;
+            // We treat any version-string mismatch as "update available". That's pragmatic and correct
+            // when authors do semver, and safe when they don't (worst case: false positive the user can ignore).
+            if (!string.Equals(latest.VersionNumber, m.Version, StringComparison.OrdinalIgnoreCase))
+            {
+                updates.Add(new ModUpdateInfo(
+                    ModId: m.ModId,
+                    DisplayName: m.DisplayName,
+                    InstalledVersion: m.Version,
+                    LatestVersion: latest.VersionNumber,
+                    LatestDownloadUrl: latest.DownloadUrl));
+            }
+        }
+        return updates.ToArray();
     }
 
     // ---- helpers ----

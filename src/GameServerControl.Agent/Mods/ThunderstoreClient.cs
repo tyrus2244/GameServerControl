@@ -111,6 +111,37 @@ public sealed class ThunderstoreClient
             ServerSideOnly: IsServerSideOnly(p));
     }
 
+    /// <summary>
+    /// Look up a single package by Thunderstore "Owner/Name" — used by mod-update + dependency-resolution paths.
+    /// Returns null if the community catalog can't be fetched or the name doesn't match.
+    /// </summary>
+    public async Task<ThunderstorePackage?> FindPackageAsync(string community, string owner, string name, CancellationToken ct)
+    {
+        var catalog = await GetCatalogAsync(community, ct);
+        if (catalog is null) return null;
+        return catalog.FirstOrDefault(p =>
+            string.Equals(p.Owner, owner, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Parse a Thunderstore download URL like
+    /// "https://thunderstore.io/package/download/Owner/Name/Version/" and return (owner, name).
+    /// Used to walk a Source URL back to the package it came from for update checks.
+    /// </summary>
+    public static (string owner, string name)? ParseDownloadUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        // Thunderstore "thunderstore.io/package/download/{owner}/{name}/{version}/" — the segments are stable.
+        var u = new Uri(url, UriKind.RelativeOrAbsolute);
+        if (!u.IsAbsoluteUri || !u.Host.Contains("thunderstore.io", StringComparison.OrdinalIgnoreCase)) return null;
+        var parts = u.AbsolutePath.Trim('/').Split('/');
+        // /package/download/{owner}/{name}/{version}/
+        var ix = Array.IndexOf(parts, "download");
+        if (ix < 0 || ix + 2 >= parts.Length) return null;
+        return (parts[ix + 1], parts[ix + 2]);
+    }
+
     private async Task<ThunderstorePackage[]?> GetCatalogAsync(string community, CancellationToken ct)
     {
         // Fast-path: cached + fresh

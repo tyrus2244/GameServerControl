@@ -49,6 +49,7 @@
   .actions button:hover{border-color:var(--accent);background:var(--accentDim)}
   .actions button.danger:hover{border-color:var(--bad);background:var(--bad);color:#fff}
   .actions button:disabled{opacity:.4;cursor:default;background:var(--bg3);border-color:var(--border)}
+
   .login{max-width:420px;margin:80px auto;background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:24px}
   .login h2{margin:0 0 16px;font-size:20px}
   .login label{display:block;margin:14px 0 6px;color:var(--textDim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
@@ -59,6 +60,32 @@
   .toast.err{border-color:var(--bad)}
   .toast.ok{border-color:var(--accent)}
   .empty{text-align:center;color:var(--textDim);padding:60px 0}
+
+  /* Drawer (slide-in panel for Players/Mods/Backups/Logs) */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.2s;z-index:20}
+  .scrim.show{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100vh;width:min(540px,100vw);background:var(--bg1);border-left:1px solid var(--border);
+          box-shadow:-4px 0 18px rgba(0,0,0,.3);transform:translateX(100%);transition:.25s cubic-bezier(.5,.0,.25,1);z-index:21;display:flex;flex-direction:column}
+  .drawer.show{transform:translateX(0)}
+  .drawer header{position:static;background:var(--bg2);padding:14px 16px}
+  .drawer header h2{margin:0;font-size:16px;font-weight:700}
+  .drawer .body{flex:1;overflow:auto;padding:14px 16px}
+  .drawer .row{padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .drawer .row:last-child{border-bottom:0}
+  .drawer .row .grow{flex:1;min-width:0}
+  .drawer button.close{margin-left:auto;background:transparent;border:0;color:var(--textDim);font-size:18px;cursor:pointer;padding:0 4px}
+  .drawer .footer{padding:10px 16px;border-top:1px solid var(--border);background:var(--bg2);display:flex;gap:8px;flex-wrap:wrap}
+  .drawer input[type=text],.drawer input[type=number]{background:var(--bg0);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:7px 9px;font-size:13px;width:100%}
+  .drawer label{color:var(--textDim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin:6px 0 4px;display:block}
+  .drawer .tabs{display:flex;gap:6px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border)}
+  .drawer .tabs button{background:transparent;border:0;color:var(--textDim);font-size:13px;font-weight:600;cursor:pointer;padding:6px 10px;border-radius:5px}
+  .drawer .tabs button.active{background:var(--bg3);color:var(--text)}
+  .badge{font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1px 6px;color:var(--textDim)}
+  .badge.ok{color:var(--accent);border-color:var(--accent)}
+  .badge.warn{color:var(--warn);border-color:var(--warn)}
+  .drawer .mod-row .desc{color:var(--textDim);font-size:12px;margin-top:2px;line-height:1.4}
+  .drawer .small{font-size:11.5px;color:var(--textDim)}
+
   @media (max-width:540px){
     header{padding:10px 12px;flex-wrap:wrap}
     header h1{font-size:15px}
@@ -92,6 +119,17 @@
   <main id="cards"><div class="empty">Loading…</div></main>
 </div>
 
+<div id="scrim" class="scrim" onclick="closeDrawer()"></div>
+<div id="drawer" class="drawer">
+  <header>
+    <h2 id="drawer-title">…</h2>
+    <button class="close" onclick="closeDrawer()" title="Close">✕</button>
+  </header>
+  <div id="drawer-tabs" class="tabs" style="display:none"></div>
+  <div id="drawer-body" class="body"></div>
+  <div id="drawer-footer" class="footer" style="display:none"></div>
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
@@ -121,6 +159,7 @@ function toast(msg, kind){
   clearTimeout(toast._t);
   toast._t = setTimeout(()=>{ t.className='toast'; }, 2800);
 }
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 async function api(path, opts){
   opts = opts || {};
@@ -192,15 +231,16 @@ function renderCard(def, st){
     ? `<span class="pill2">${st.cpuPercent!=null?`${(+st.cpuPercent).toFixed(1)}% CPU`:''}${(st.cpuPercent!=null && st.memoryMB!=null)?' · ':''}${st.memoryMB!=null?`${st.memoryMB.toLocaleString()} MB`:''}</span>`
     : '';
   const invite = (st.metadata && st.metadata.InviteCode)
-    ? `<span class="pill2 invite">🔗 INVITE <span class="code">${st.metadata.InviteCode}</span> <button onclick="copyInvite('${st.metadata.InviteCode}')" title="copy">📋</button></span>`
+    ? `<span class="pill2 invite">🔗 INVITE <span class="code">${esc(st.metadata.InviteCode)}</span> <button onclick="copyInvite('${esc(st.metadata.InviteCode)}')" title="copy">📋</button></span>`
     : '';
+  const hasRcon = (def.rconPort||0) > 0;
   return `
-    <div class="card" data-id="${def.id}">
+    <div class="card" data-id="${esc(def.id)}">
       <div class="top">
         <div class="info">
-          <div class="name"><span class="icon">${iconFor(def)}</span>${def.name}<span class="type">· ${def.gameType}</span></div>
+          <div class="name"><span class="icon">${iconFor(def)}</span>${esc(def.name)}<span class="type">· ${esc(def.gameType)}</span></div>
           <div class="meta">
-            <span class="lbl">${hostingLabel}</span>
+            <span class="lbl">${esc(hostingLabel)}</span>
             <span class="pill2"><span class="dot" style="background:${vmColor}"></span>${vmText}</span>
             <span class="pill2"><span class="dot" style="background:${pColor}"></span>${pText}</span>
             ${cpuRam}
@@ -208,16 +248,19 @@ function renderCard(def, st){
           </div>
         </div>
         <label class="toggle" title="${isOn?'Stop':'Start'}">
-          <input type="checkbox" ${isOn?'checked':''} onchange="toggleServer('${def.id}', this.checked, this)"/>
+          <input type="checkbox" ${isOn?'checked':''} onchange="toggleServer('${esc(def.id)}', this.checked, this)"/>
           <span class="track"></span><span class="thumb"></span>
         </label>
       </div>
       <div class="actions">
-        <button onclick="act('${def.id}','start')">▶ Start</button>
-        <button class="danger" onclick="act('${def.id}','stop')">■ Stop</button>
-        <button onclick="act('${def.id}','restart')">↻ Restart</button>
-        <button onclick="act('${def.id}','backup')">⏷ Backup</button>
-        <button onclick="act('${def.id}','update')">⤓ Update</button>
+        <button onclick="act('${esc(def.id)}','start')">▶ Start</button>
+        <button class="danger" onclick="act('${esc(def.id)}','stop')">■ Stop</button>
+        <button onclick="act('${esc(def.id)}','restart')">↻ Restart</button>
+        <button onclick="act('${esc(def.id)}','backup')">⏷ Backup</button>
+        <button onclick="act('${esc(def.id)}','update')">⤓ Update</button>
+        ${hasRcon ? `<button onclick="openPlayers('${esc(def.id)}')">👥 Players</button>` : ''}
+        <button onclick="openMods('${esc(def.id)}')">🧩 Mods</button>
+        <button onclick="openBackups('${esc(def.id)}')">📦 Backups</button>
       </div>
     </div>`;
 }
@@ -248,6 +291,232 @@ function copyInvite(code){
     ()=>toast('Invite code copied: '+code, 'ok'),
     ()=>toast('Copy failed','err')
   );
+}
+
+// ============= Drawer =============
+let drawerCtx = null;
+function openDrawer(title){
+  drawerCtx = { title };
+  $('#drawer-title').textContent = title;
+  $('#drawer-tabs').innerHTML = ''; $('#drawer-tabs').style.display = 'none';
+  $('#drawer-body').innerHTML = '<div class="empty">Loading…</div>';
+  $('#drawer-footer').innerHTML = ''; $('#drawer-footer').style.display = 'none';
+  $('#drawer').classList.add('show');
+  $('#scrim').classList.add('show');
+}
+function closeDrawer(){
+  $('#drawer').classList.remove('show');
+  $('#scrim').classList.remove('show');
+}
+
+// ----- Players drawer -----
+async function openPlayers(id){
+  const def = SERVERS.find(s=>s.id===id);
+  openDrawer(`👥 Players — ${def?.name||id}`);
+  drawerCtx = { kind:'players', id, def };
+  await reloadPlayers();
+  $('#drawer-footer').style.display = 'flex';
+  $('#drawer-footer').innerHTML = `
+    <button onclick="reloadPlayers()">↻ Refresh</button>
+    <input id="bcast" placeholder="broadcast message" style="flex:1;background:var(--bg0);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:7px 9px"/>
+    <button onclick="broadcast()">📢 Send</button>`;
+}
+async function reloadPlayers(){
+  try {
+    const players = await api(`/api/servers/${drawerCtx.id}/rcon/players`);
+    if (!players || !players.length){
+      $('#drawer-body').innerHTML = '<div class="empty">No players online.</div>';
+      return;
+    }
+    $('#drawer-body').innerHTML = players.map(p => `
+      <div class="row">
+        <div class="grow">
+          <div style="font-weight:600">${esc(p.name||'?')}</div>
+          <div class="small">Steam: ${esc(p.steamId||'?')}</div>
+        </div>
+        <button onclick="rcon('KickPlayer','${esc(p.steamId)}','Kicked ${esc(p.name)}')">✕ Kick</button>
+        <button class="danger" onclick="confirmBan('${esc(p.steamId)}','${esc(p.name)}')">🚫 Ban</button>
+      </div>`).join('');
+  } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function rcon(cmd, payload, okMsg){
+  try {
+    const r = await api(`/api/servers/${drawerCtx.id}/rcon/command`, {
+      method:'POST', body: JSON.stringify({ command: cmd, payload })
+    });
+    toast(r.success ? okMsg : ('Failed: ' + (r.error||'?')), r.success?'ok':'err');
+    if (cmd === 'KickPlayer' || cmd === 'BanPlayer') reloadPlayers();
+  } catch(e){ toast('RCON failed: ' + e.message, 'err'); }
+}
+function confirmBan(sid, name){
+  if (!confirm(`Ban ${name} (${sid})?`)) return;
+  rcon('BanPlayer', sid, `Banned ${name}`);
+}
+function broadcast(){
+  const t = ($('#bcast')?.value || '').trim();
+  if (!t) return;
+  rcon('BroadcastMessage', t, 'Broadcast sent');
+  $('#bcast').value = '';
+}
+
+// ----- Mods drawer -----
+async function openMods(id){
+  const def = SERVERS.find(s=>s.id===id);
+  openDrawer(`🧩 Mods — ${def?.name||id}`);
+  drawerCtx = { kind:'mods', id, def, modTab: 'installed' };
+  $('#drawer-tabs').style.display = 'flex';
+  $('#drawer-tabs').innerHTML = `
+    <button id="tab-installed" class="active" onclick="switchModTab('installed')">📦 Installed</button>
+    <button id="tab-browse" onclick="switchModTab('browse')">🔎 Browse</button>`;
+  await loadInstalledMods();
+}
+async function switchModTab(tab){
+  drawerCtx.modTab = tab;
+  document.querySelectorAll('#drawer-tabs button').forEach(b=>b.classList.toggle('active', b.id==='tab-'+tab));
+  if (tab === 'installed') loadInstalledMods();
+  else loadBrowseMods('');
+}
+async function loadInstalledMods(){
+  try {
+    const r = await api(`/api/servers/${drawerCtx.id}/mods`);
+    if (!r.supported){
+      $('#drawer-body').innerHTML = `<div class="empty">${esc(r.unsupportedReason || 'Not supported.')}</div>`;
+      $('#drawer-footer').style.display = 'none';
+      return;
+    }
+    if (!r.mods.length){
+      $('#drawer-body').innerHTML = `<div class="empty">No mods installed.<br><span class="small">Folder: ${esc(r.modsFolder||'')}</span></div>`;
+    } else {
+      $('#drawer-body').innerHTML = r.mods.map(m => `
+        <div class="row mod-row">
+          <div class="grow">
+            <div style="font-weight:600">${esc(m.displayName)} ${m.version ? `<span class="small">v${esc(m.version)}</span>`:''}</div>
+            <div class="small">${esc(m.modId)} · ${(m.sizeBytes/1024|0).toLocaleString()} KB</div>
+          </div>
+          <button class="danger" onclick="uninstallMod('${esc(m.modId)}')">🗑</button>
+        </div>`).join('');
+    }
+    $('#drawer-footer').style.display = 'flex';
+    $('#drawer-footer').innerHTML = `
+      <button onclick="checkModUpdates()">🔄 Check updates</button>
+      <input id="mod-url" type="text" placeholder=".zip URL" style="flex:1"/>
+      <button onclick="installModUrl()">⬇ Install</button>`;
+  } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function checkModUpdates(){
+  try {
+    const r = await api(`/api/servers/${drawerCtx.id}/mods/updates`);
+    if (!r.updates.length){ toast('All mods up to date.', 'ok'); return; }
+    if (!confirm(`Update ${r.updates.length} mod(s)?\n\n` + r.updates.map(u=>`${u.displayName}: ${u.installedVersion||'?'} → ${u.latestVersion}`).join('\n'))) return;
+    for (const u of r.updates){
+      toast('Updating ' + u.displayName + '…');
+      await api(`/api/servers/${drawerCtx.id}/mods/${encodeURIComponent(u.modId)}/update`, {
+        method:'POST', body: JSON.stringify({ url: u.latestDownloadUrl, displayName: u.displayName })
+      });
+    }
+    toast(`Updated ${r.updates.length} mod(s) — restart the server.`, 'ok');
+    loadInstalledMods();
+  } catch(e){ toast('Update failed: ' + e.message, 'err'); }
+}
+async function installModUrl(){
+  const url = ($('#mod-url')?.value || '').trim();
+  if (!url) return;
+  try {
+    const r = await api(`/api/servers/${drawerCtx.id}/mods/install`, {
+      method:'POST', body: JSON.stringify({ url, displayName: null })
+    });
+    if (r.ok){ toast(`Installed ${r.mod.displayName}`, 'ok'); loadInstalledMods(); }
+    else { toast('Install failed: ' + (r.error||'?'), 'err'); }
+  } catch(e){ toast('Install failed: ' + e.message, 'err'); }
+}
+async function uninstallMod(modId){
+  if (!confirm('Uninstall ' + modId + '?')) return;
+  try { await api(`/api/servers/${drawerCtx.id}/mods/${encodeURIComponent(modId)}`, { method:'DELETE' }); toast('Uninstalled.', 'ok'); loadInstalledMods(); }
+  catch(e){ toast('Uninstall failed: ' + e.message, 'err'); }
+}
+async function loadBrowseMods(q){
+  $('#drawer-body').innerHTML = '<div class="empty">Searching…</div>';
+  try {
+    const r = await api(`/api/servers/${drawerCtx.id}/mods/search?q=${encodeURIComponent(q||'')}&limit=30`);
+    if (!r.supported){
+      $('#drawer-body').innerHTML = `<div class="empty">${esc(r.unsupportedReason || 'Not supported.')}</div>`;
+      return;
+    }
+    const list = r.results.map(m => `
+      <div class="row mod-row">
+        <div class="grow">
+          <div style="font-weight:600">${esc(m.name)} <span class="small">by ${esc(m.owner)} · v${esc(m.version)}</span></div>
+          <div class="desc">${esc(m.description||'')}</div>
+          <div class="small" style="margin-top:4px">
+            ⬇ ${m.downloads.toLocaleString()}
+            ${m.serverSideOnly ? '<span class="badge ok">SERVER-SIDE</span>' : '<span class="badge warn">CLIENT REQ</span>'}
+            ${m.deprecated ? '<span class="badge warn">DEPRECATED</span>' : ''}
+          </div>
+        </div>
+        <button onclick="installFrom('${esc(m.downloadUrl)}','${esc(m.name)}')">⬇</button>
+      </div>`).join('');
+    $('#drawer-body').innerHTML = list || '<div class="empty">No matches.</div>';
+    $('#drawer-footer').style.display = 'flex';
+    $('#drawer-footer').innerHTML = `
+      <input id="mod-q" placeholder="search ${esc(r.source||'')}" style="flex:1" onkeydown="if(event.key==='Enter')loadBrowseMods(this.value)"/>
+      <button onclick="loadBrowseMods(document.getElementById('mod-q').value)">🔎</button>`;
+  } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function installFrom(url, name){
+  try {
+    const r = await api(`/api/servers/${drawerCtx.id}/mods/install`, {
+      method:'POST', body: JSON.stringify({ url, displayName: name })
+    });
+    if (r.ok) toast('Installed ' + r.mod.displayName, 'ok');
+    else toast('Failed: ' + (r.error||'?'), 'err');
+  } catch(e){ toast('Install failed: ' + e.message, 'err'); }
+}
+
+// ----- Backups drawer -----
+async function openBackups(id){
+  const def = SERVERS.find(s=>s.id===id);
+  openDrawer(`📦 Backups — ${def?.name||id}`);
+  drawerCtx = { kind:'backups', id, def };
+  await reloadBackups();
+  $('#drawer-footer').style.display = 'flex';
+  $('#drawer-footer').innerHTML = `
+    <button onclick="reloadBackups()">↻ Refresh</button>
+    <button onclick="newBackup()">⏷ Backup now</button>`;
+}
+async function reloadBackups(){
+  try {
+    const list = await api(`/api/servers/${drawerCtx.id}/backups`);
+    if (!list.length){
+      $('#drawer-body').innerHTML = '<div class="empty">No backups yet.</div>';
+      return;
+    }
+    $('#drawer-body').innerHTML = list.map(b => `
+      <div class="row">
+        <div class="grow">
+          <div style="font-weight:600">${esc(b.checkpointName)}</div>
+          <div class="small">${new Date(b.createdAt).toLocaleString()} · ${(b.sizeBytes||0)>(1<<20) ? ((b.sizeBytes/(1<<20))|0)+' MB' : ((b.sizeBytes/(1<<10))|0)+' KB'}</div>
+        </div>
+        <button onclick="restoreBackup('${esc(b.checkpointName)}')">↶ Restore</button>
+        <button class="danger" onclick="deleteBackup('${esc(b.checkpointName)}')">🗑</button>
+      </div>`).join('');
+  } catch(e){ $('#drawer-body').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function newBackup(){
+  await act(drawerCtx.id, 'backup');
+  setTimeout(reloadBackups, 1500);
+}
+async function restoreBackup(name){
+  if (!confirm(`Restore from ${name}?\n\nStop the server first. Current saves will be moved to a 'pre-restore' safety backup.`)) return;
+  try {
+    const r = await api(`/api/servers/${drawerCtx.id}/backups/${encodeURIComponent(name)}/restore`, { method:'POST' });
+    toast(r.success ? 'Restore complete' : ('Restore failed: ' + r.message), r.success?'ok':'err');
+    reloadBackups();
+  } catch(e){ toast('Restore failed: ' + e.message, 'err'); }
+}
+async function deleteBackup(name){
+  if (!confirm('Delete backup ' + name + '?')) return;
+  try { await api(`/api/servers/${drawerCtx.id}/backups/${encodeURIComponent(name)}`, { method:'DELETE' }); toast('Deleted.', 'ok'); reloadBackups(); }
+  catch(e){ toast('Delete failed: ' + e.message, 'err'); }
 }
 
 function login(){
@@ -301,6 +570,9 @@ async function start(){
   $('#login').style.display = 'block';
   $('#login-url').value = location.origin;
 })();
+
+// ESC closes drawer
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 </script>
 </body>
 </html>

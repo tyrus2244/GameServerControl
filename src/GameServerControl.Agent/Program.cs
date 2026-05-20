@@ -45,6 +45,7 @@ builder.Services.AddSingleton<ServerStore>();
 builder.Services.AddSingleton<StatusTracker>();
 builder.Services.AddSingleton<ServerOrchestrator>();
 builder.Services.AddSingleton<MaintenanceScheduler>();
+builder.Services.AddSingleton<GameServerControl.Agent.Notifications.DiscordNotifier>();
 builder.Services.AddSingleton<ValheimConfig>();
 builder.Services.AddSingleton<PalworldConfig>();
 builder.Services.AddSingleton<WindroseConfig>();
@@ -82,6 +83,7 @@ builder.Services.AddSingleton<LogTailService>();
 }
 
 builder.Services.AddSingleton<AuditLogger>();
+builder.Services.AddSingleton<TokenRegistry>();
 
 builder.Services.AddAuthentication(TokenAuthHandler.SchemeName)
     .AddScheme<TokenAuthOptions, TokenAuthHandler>(TokenAuthHandler.SchemeName, opts =>
@@ -93,6 +95,10 @@ builder.Services.AddAuthorization(o =>
     o.DefaultPolicy = new AuthorizationPolicyBuilder(TokenAuthHandler.SchemeName)
         .RequireAuthenticatedUser()
         .Build();
+    // Endpoints tagged with .RequireAuthorization("admin") demand a TokenRole.Admin presented token.
+    o.AddPolicy("admin", p => p
+        .RequireAuthenticatedUser()
+        .RequireClaim(TokenAuthHandler.RoleClaim, "Admin"));
 });
 
 builder.Services.AddSignalR().AddJsonProtocol(o =>
@@ -119,6 +125,7 @@ app.MapGet("/", () =>
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<RoleEnforcementMiddleware>();
 app.UseMiddleware<AuditMiddleware>();
 
 var api = app.MapGroup("/api").RequireAuthorization();
@@ -334,6 +341,31 @@ api.MapDelete("/servers/{id}/mods/{modId}", async (string id, string modId, Serv
     return ok ? Results.Ok(new { uninstalled = modId }) : Results.NotFound(new { error = "Mod not found." });
 });
 
+// Returns one entry per installed mod that has a newer version available in its marketplace.
+api.MapGet("/servers/{id}/mods/updates", async (string id, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
+{
+    var def = reg.Get(id);
+    if (def is null) return Results.NotFound();
+    var mgr = mods.For(def);
+    if (mgr is null) return Results.Ok(new ModUpdatesResponse(Array.Empty<ModUpdateInfo>(), false, ModUnsupportedReason(def)));
+    var updates = await mgr.CheckUpdatesAsync(def, ct);
+    return Results.Ok(new ModUpdatesResponse(updates, true, null));
+});
+
+// Update a single mod by re-installing from its latest download URL (caller supplies the URL it got from /updates).
+api.MapPost("/servers/{id}/mods/{modId}/update", async (string id, string modId, ModInstallRequest req, ServerRegistry reg, GameServerControl.Agent.Mods.ModManagerRegistry mods, CancellationToken ct) =>
+{
+    var def = reg.Get(id);
+    if (def is null) return Results.NotFound();
+    var mgr = mods.For(def);
+    if (mgr is null) return Results.BadRequest(new ModInstallResult(false, null, "Mod management not supported for this game."));
+    // Idempotent: removing first then re-installing avoids stale-file leftovers (e.g. plugins whose filename
+    // changed across versions). On Valheim this triggers our existing "overwrite the per-mod folder" code path.
+    await mgr.UninstallAsync(def, modId, ct);
+    var result = await mgr.InstallFromUrlAsync(def, req.Url, req.DisplayName, ct);
+    return result.Ok ? Results.Ok(result) : Results.BadRequest(result);
+});
+
 api.MapGet("/servers/{id}/rcon/players", async (string id, ServerRegistry reg, RconService rcon, CancellationToken ct) =>
 {
     var def = reg.Get(id);
@@ -423,6 +455,49 @@ api.MapDelete("/servers/{id}/schedule", async (string id, ServerRegistry reg, Ma
     await sched.ApplyAsync(id, null, ct);
     return Results.NoContent();
 });
+
+// Test a Discord webhook URL without saving it (used by the editor's "Send test" button).
+api.MapPost("/discord/test", async (DiscordWebhookTestRequest req, GameServerControl.Agent.Notifications.DiscordNotifier notifier, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(req.WebhookUrl)) return Results.BadRequest("WebhookUrl required");
+    try
+    {
+        await notifier.SendRawAsync(req.WebhookUrl,
+            "✅ Webhook test",
+            "If you can see this in Discord, GameServerControl can post here.", ct);
+        return Results.Ok(new { ok = true });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { ok = false, error = ex.Message });
+    }
+});
+
+// ---- Token management (admin-only) ----
+// GET returns metadata (token values are stripped to prefix-only). POST creates a new
+// token and is the *one* place callers can see the raw value — capture it immediately.
+api.MapGet("/tokens", (TokenRegistry tokens, HttpContext ctx) =>
+{
+    var role = ctx.User.FindFirst(TokenAuthHandler.RoleClaim)?.Value;
+    return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+        ? Results.Ok(tokens.ListMetadata())
+        : Results.Forbid();
+});
+
+api.MapPost("/tokens", (CreateTokenRequest req, TokenRegistry tokens) =>
+{
+    if (string.IsNullOrWhiteSpace(req.Id) || string.IsNullOrWhiteSpace(req.Name))
+        return Results.BadRequest("Id and Name required");
+    try
+    {
+        var rec = tokens.Create(req.Id, req.Name, req.Role);
+        return Results.Ok(rec);   // includes raw Token — show once to user, never again
+    }
+    catch (InvalidOperationException ex) { return Results.Conflict(ex.Message); }
+});
+
+api.MapDelete("/tokens/{id}", (string id, TokenRegistry tokens) =>
+    tokens.Delete(id) ? Results.NoContent() : Results.NotFound());
 
 app.MapHub<StatusHub>("/hubs/status").RequireAuthorization();
 

@@ -45,3 +45,16 @@ public sealed record ModSearchResponse(
     bool Supported,
     string? Source,           // e.g. "valheim.thunderstore.io" — surfaces to user in UI
     string? UnsupportedReason);
+
+/// <summary>One row in a "check for updates" response — an installed mod with a newer version available.</summary>
+public sealed record ModUpdateInfo(
+    string ModId,
+    string DisplayName,
+    string? InstalledVersion,
+    string LatestVersion,
+    string LatestDownloadUrl);
+
+public sealed record ModUpdatesResponse(
+    ModUpdateInfo[] Updates,
+    bool Supported,
+    string? UnsupportedReason);

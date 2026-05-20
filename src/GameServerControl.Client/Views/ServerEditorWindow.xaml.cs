@@ -1,5 +1,6 @@
 using System.Windows;
 using GameServerControl.Client.Helpers;
+using GameServerControl.Client.Services;
 using GameServerControl.Client.ViewModels;
 using GameServerControl.Shared;
 
@@ -55,5 +56,33 @@ public partial class ServerEditorWindow : Window
     {
         DialogResult = false;
         Close();
+    }
+
+    private async void TestDiscord_Click(object sender, RoutedEventArgs e)
+    {
+        var url = (ViewModel.DiscordWebhookUrl ?? "").Trim();
+        if (string.IsNullOrEmpty(url))
+        {
+            MessageBox.Show("Enter a webhook URL first.", "Test webhook", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        // Get an AgentClient via the app settings — the editor is opened from MainWindow which is already connected.
+        var settings = AppSettings.Load();
+        if (string.IsNullOrWhiteSpace(settings.AgentUrl) || string.IsNullOrWhiteSpace(settings.ApiToken))
+        {
+            MessageBox.Show("Connect to the agent first (Settings).", "Test webhook", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        try
+        {
+            var client = new AgentClient(settings.AgentUrl, settings.ApiToken);
+            var ok = await client.TestDiscordWebhookAsync(url);
+            MessageBox.Show(ok ? "Sent — check your Discord channel." : "Failed to send. Check the URL.",
+                "Test webhook", MessageBoxButton.OK, ok ? MessageBoxImage.Information : MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Test failed: " + ex.Message, "Test webhook", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

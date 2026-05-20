@@ -57,6 +57,7 @@
                     <Button Content="+ Add server" Style="{StaticResource ActionButton}" Command="{Binding AddServerCommand}"/>
                     <Button Content="Refresh" Style="{StaticResource ActionButton}" Command="{Binding RefreshAllCommand}"/>
                     <Button Content="Reconnect" Style="{StaticResource ActionButton}" Command="{Binding ReconnectCommand}"/>
+                    <Button Content="🔑 Tokens" Style="{StaticResource ActionButton}" Command="{Binding OpenTokensCommand}" ToolTip="Manage API tokens + roles"/>
                     <Button Content="Settings" Style="{StaticResource ActionButton}" Command="{Binding OpenSettingsCommand}"/>
                 </StackPanel>
             </Grid>
@@ -84,6 +85,10 @@
                                         <TextBlock Text="{Binding GameIcon}" FontSize="22" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                         <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
                                         <TextBlock Text="{Binding GameType, StringFormat=' · {0}'}" Foreground="{StaticResource TextDimBrush}" Margin="6,2,0,0" VerticalAlignment="Center"/>
+                                        <Border Style="{StaticResource StatusPill}" Margin="10,0,0,0"
+                                                Visibility="{Binding HasMultipleAgents, Converter={x:Static vm:BoolVisibilityConverter.Instance}}">
+                                            <TextBlock Text="{Binding AgentNickname}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InfoBrush}"/>
+                                        </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                         <TextBlock Text="{Binding HostingLabel}" Foreground="{StaticResource TextDimBrush}"/>
@@ -147,11 +152,14 @@
                                         <Button Content="■ Stop" Style="{StaticResource DangerButton}" Command="{Binding StopCommand}"/>
                                         <Button Content="↻ Restart" Style="{StaticResource ActionButton}" Command="{Binding RestartCommand}"/>
                                         <Button Content="⏷ Backup" Style="{StaticResource ActionButton}" Command="{Binding BackupCommand}"/>
+                                        <Button Content="📦 Backups" Style="{StaticResource ActionButton}" Command="{Binding BackupsCommand}" ToolTip="List, restore, or delete backups"/>
+                                        <Button Content="📊 Stats" Style="{StaticResource ActionButton}" Command="{Binding StatsCommand}" ToolTip="Live CPU/RAM history"/>
                                         <Button Content="⤓ Update" Style="{StaticResource ActionButton}" Command="{Binding UpdateCommand}"/>
                                         <Button Content="⚙ Configure" Style="{StaticResource ActionButton}" Command="{Binding ConfigureCommand}"/>
                                         <Button Content="💬 Console" Style="{StaticResource ActionButton}" Command="{Binding ConsoleCommand}"/>
                                         <Button Content="📜 Log" Style="{StaticResource ActionButton}" Command="{Binding LogCommand}"/>
                                         <Button Content="🧩 Mods" Style="{StaticResource ActionButton}" Command="{Binding ModsCommand}" ToolTip="Manage server-side mods (BepInEx plugins, etc.)"/>
+                                        <Button Content="⏰ Schedule" Style="{StaticResource ActionButton}" Command="{Binding ScheduleCommand}" ToolTip="Recurring restart / update / backup"/>
                                         <Button Content="✓ Apply" Style="{StaticResource ActionButton}" Command="{Binding ApplyConfigCommand}"/>
                                         <ProgressBar IsIndeterminate="True" Width="120" Height="6" Margin="12,0,0,0" VerticalAlignment="Center"
                                                      Visibility="{Binding IsBusy, Converter={x:Static vm:BoolVisibilityConverter.Instance}}"/>

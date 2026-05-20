@@ -88,6 +88,58 @@ public partial class ModsWindow : Window
         catch (Exception ex) { StatusText.Text = $"Uninstall failed: {ex.Message}"; }
     }
 
+    // ---- update check ----
+    private ModUpdateInfo[] _pendingUpdates = Array.Empty<ModUpdateInfo>();
+
+    private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        UpdatesSummary.Text = "Checking…";
+        UpdateAllBtn.IsEnabled = false;
+        try
+        {
+            var resp = await _client.CheckModUpdatesAsync(_serverId);
+            _pendingUpdates = resp.Updates;
+            if (!resp.Supported)
+            {
+                UpdatesSummary.Text = "Updates not supported: " + (resp.UnsupportedReason ?? "n/a");
+                return;
+            }
+            if (_pendingUpdates.Length == 0)
+            {
+                UpdatesSummary.Text = "All mods are up to date.";
+                return;
+            }
+            UpdatesSummary.Text = $"{_pendingUpdates.Length} update(s) available: " +
+                string.Join(", ", _pendingUpdates.Select(u => $"{u.DisplayName} → {u.LatestVersion}"));
+            UpdateAllBtn.IsEnabled = true;
+        }
+        catch (Exception ex)
+        {
+            UpdatesSummary.Text = "Check failed: " + ex.Message;
+        }
+    }
+
+    private async void UpdateAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pendingUpdates.Length == 0) return;
+        UpdateAllBtn.IsEnabled = false;
+        var total = _pendingUpdates.Length;
+        var done = 0; var failed = 0;
+        foreach (var u in _pendingUpdates)
+        {
+            UpdatesSummary.Text = $"Updating {u.DisplayName} ({done + 1}/{total})…";
+            try
+            {
+                var r = await _client.UpdateModAsync(_serverId, u.ModId, u.LatestDownloadUrl, u.DisplayName);
+                if (r.Ok) done++; else failed++;
+            }
+            catch { failed++; }
+        }
+        UpdatesSummary.Text = $"Updated {done}, failed {failed}. Restart the server for changes to take effect.";
+        _pendingUpdates = Array.Empty<ModUpdateInfo>();
+        await ReloadAsync();
+    }
+
     // ---- browse tab ----
 
     private void SearchBox_KeyDown(object sender, KeyEventArgs e)

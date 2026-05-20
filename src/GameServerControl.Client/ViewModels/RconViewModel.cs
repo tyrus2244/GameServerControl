@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GameServerControl.Client.Services;
@@ -7,9 +8,10 @@ using GameServerControl.Shared;
 
 namespace GameServerControl.Client.ViewModels;
 
-public sealed partial class RconViewModel : ObservableObject
+public sealed partial class RconViewModel : ObservableObject, IDisposable
 {
     private readonly AgentClient _client;
+    private readonly DispatcherTimer _refreshTimer;
     public ServerDef Server { get; }
 
     public ObservableCollection<RconPlayer> Players { get; } = new();
@@ -22,13 +24,21 @@ public sealed partial class RconViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string status = "Ready";
     [ObservableProperty] private RconPlayer? selectedPlayer;
+    [ObservableProperty] private bool autoRefresh = true;
 
     public RconViewModel(AgentClient client, ServerDef server)
     {
         _client = client;
         Server = server;
+        // Poll player list every 10s while the window is open. Cheap (single RCON listplayers
+        // call) and the live count is the main reason to keep the console open.
+        _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+        _refreshTimer.Tick += (_, _) => { if (AutoRefresh && !IsBusy) _ = RefreshPlayers(); };
+        _refreshTimer.Start();
         _ = RefreshPlayers();
     }
+
+    public void Dispose() => _refreshTimer.Stop();
 
     private void Append(string line)
     {
