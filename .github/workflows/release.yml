@@ -30,16 +30,17 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore + build
-        run: |
-          dotnet restore
-          dotnet build -c Release --no-restore
+      - name: Restore
+        run: dotnet restore
 
+      # We let `publish` do its own build because the RID-specific output it needs
+      # isn't produced by a plain `dotnet build` (which is AnyCPU). The cost is a
+      # second compile per project — small in CI relative to download + zip time.
       - name: Publish agent (win-x64)
-        run: dotnet publish src/GameServerControl.Agent -c Release -r win-x64 --self-contained false -o publish/Agent-windows --no-build
+        run: dotnet publish src/GameServerControl.Agent -c Release -r win-x64 --self-contained false -o publish/Agent-windows
 
       - name: Publish client (win-x64)
-        run: dotnet publish src/GameServerControl.Client -c Release -r win-x64 --self-contained false -o publish/Client-windows --no-build
+        run: dotnet publish src/GameServerControl.Client -c Release -r win-x64 --self-contained false -o publish/Client-windows
 
       - name: Zip agent
         run: Compress-Archive -Path publish/Agent-windows/* -DestinationPath GameServerControl-Agent-windows.zip
