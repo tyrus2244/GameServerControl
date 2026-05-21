@@ -1,178 +1,113 @@
 # GameServerControl
 
-A self-hosted control panel for Steam-based dedicated game servers. One agent runs as a service on the host machine; a Windows desktop client and a browser UI both talk to it over HTTPS. MIT licensed.
+I host game servers for me and a few friends. After getting fed up with SSH and steamcmd for the hundredth time, I built this.
 
-Supports Valheim, Satisfactory, Palworld, ARK (Ascended + Evolved), Rust, 7 Days to Die, Terraria, Don't Starve Together, Project Zomboid, Minecraft (Java), and Windrose. Agent runs on Windows, Linux, and macOS. The desktop client is Windows-only; everyone else uses the browser UI.
+It's a service you install on the machine your game servers live on. You point a browser at it (or the Windows desktop client) and you get a dashboard for everything: install new servers, start/stop them, browse mods, manage RCON, take backups, schedule maintenance, see when something's crashed.
+
+Right now it handles Valheim, Satisfactory, Palworld, ARK Survival Ascended, ARK Survival Evolved, Rust, 7 Days to Die, Terraria, Don't Starve Together, Project Zomboid, Minecraft Java, and Windrose. Adding more is a couple files of work, see the bottom of this doc.
+
+The agent itself runs on Windows, Linux, and macOS. The desktop client is Windows-only (it's WPF, sorry). Everyone else uses the browser UI which works on phones too.
+
+MIT licensed. Meant to live behind Tailscale or a LAN. There's HTTPS with a self-signed cert and a random API token, but don't expose the port to the public internet expecting that to be enough.
 
 ## Install
 
-One line per platform. Each script downloads the matching release artifact, installs the .NET 8 runtime if missing, registers the host's native service (Windows service, systemd unit, or LaunchAgent), and preserves config across upgrades. Re-running the same command upgrades to the latest release.
+Re-run the same command later to upgrade. The scripts grab .NET 8 if you don't have it, fetch the latest release, set up the right service flavor, and keep your config files across upgrades.
 
-Windows (elevated PowerShell):
+Windows, admin PowerShell:
 
-```powershell
-iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
-```
+    iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install.ps1 | iex
 
-Windows, client only (no admin, no service):
+If you only want the desktop client (no admin, no service):
 
-```powershell
-iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install-client.ps1 | iex
-```
+    iwr https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/windows/install-client.ps1 | iex
 
 Linux:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/linux/install-from-release.sh | sudo bash
-```
+    curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/linux/install-from-release.sh | sudo bash
 
 macOS:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/macos/install-from-release.sh | bash
-```
+    curl -fsSL https://raw.githubusercontent.com/tyrus2244/GameServerControl/main/deploy/macos/install-from-release.sh | bash
 
-On first run, the agent generates a random API token and writes it to `appsettings.json`. Paste that into the client's Settings (or the browser UI's login form). The agent also polls GitHub Releases once a day and surfaces an in-app banner when a newer release exists.
+The agent prints a generated API token to the log on first boot. Paste it into the client or the browser UI when prompted.
 
 ## Screenshots
 
-<p align="center"><img src="docs/screenshots/dashboard.png"     alt="Dashboard"      width="800"/></p>
-<p align="center"><img src="docs/screenshots/create-wizard.png" alt="Create Server"  width="800"/></p>
-<p align="center"><img src="docs/screenshots/mods-window.png"   alt="Mod browser"    width="800"/></p>
-<p align="center"><img src="docs/screenshots/players.png"       alt="Player list"    width="800"/></p>
-<p align="center"><img src="docs/screenshots/web-ui.png"        alt="Browser UI"     width="800"/></p>
+<p align="center"><img src="docs/screenshots/dashboard.png"     width="800"/></p>
+<p align="center"><img src="docs/screenshots/create-wizard.png" width="800"/></p>
+<p align="center"><img src="docs/screenshots/mods-window.png"   width="800"/></p>
+<p align="center"><img src="docs/screenshots/players.png"       width="800"/></p>
+<p align="center"><img src="docs/screenshots/web-ui.png"        width="800"/></p>
 
-## What it does
+## How it works
 
-**Hosting modes.** Bare-metal (the agent supervises processes directly) or Hyper-V VM (PowerShell Direct into the guest). Both modes are managed identically from the UI.
+The Create Server button is the part I'm most happy with. You pick a game from a list, give it a path to install to, and the agent handles the rest. If steamcmd isn't on the box it downloads it. Then it runs `+login anonymous +force_install_dir <path> +app_update <appid> validate` and parses the progress percentage out of steamcmd's output so the bar actually moves. When it finishes the server is registered with default args, save dirs, and exe path, ready to start.
 
-**Create Server.** Pick a game from the wizard, choose an install path, and the agent runs `steamcmd +login anonymous +force_install_dir … +app_update <appid> validate +quit`, streams progress, then registers the new server. SteamCMD is auto-downloaded if it isn't on the host. Works for any anonymous-installable Steam dedicated server.
+If you've already got servers set up the old-fashioned way, the Discover button scans Steam libraries (via `libraryfolders.vdf` and `appmanifest_*.acf`) plus a handful of common paths like `C:\GameServers`, `~/gameservers`, `/srv/gameservers`, and `~/Library/Application Support/Steam` on Mac. Anything it finds that isn't already registered shows up with an Add button. There's also a plain manual Add for stuff Discover doesn't catch.
 
-**Auto-discover.** Scans Steam libraries (`libraryfolders.vdf` + `appmanifest_*.acf`) plus common install roots (`C:\GameServers`, `~/gameservers`, `/srv/gameservers`, `~/Library/Application Support/Steam` on macOS). Matches against a preset list and flags installs that aren't yet registered.
+The mod browser has different backends per game because every game's mod scene is different. Valheim pulls from Thunderstore. Satisfactory uses ficsit.app's GraphQL API. ARK does Workshop installs through steamcmd, you paste a workshop URL or ID. Palworld has a curated list because the Palworld mod ecosystem mostly lives on GitHub Releases instead of a single marketplace. Windrose has no community marketplace yet so the Mods tab just says so. By default the browser filters to server-side mods so your players don't have to install anything themselves. Thunderstore dependencies resolve automatically, and there's a Check Updates button that compares installed versions against the marketplace.
 
-**Per-game config editors.** Curated schemas for Valheim, Palworld, Satisfactory, Windrose, ARK, Rust, 7DTD, Terraria, Don't Starve Together, Project Zomboid, and Minecraft. Where the game exposes a settings file or live admin API, every field is surfaced (Palworld grows from 53 curated to 109 total; Satisfactory adds all 13 Advanced Game Settings).
+Backups for bare-metal installs are zip archives of the save directories. For VMs it uses Hyper-V checkpoints. Restoring takes a safety snapshot of the current state first so a bad restore is recoverable. Scheduled maintenance has three buttons: daily restart, weekly steamcmd update, hourly backup. On Windows that drives Task Scheduler. On Linux you do the same thing yourself with a systemd timer (recipe in the wiki). On macOS you use a LaunchAgent with a calendar interval.
 
-**Mod management.** Server-side mods only by default, so clients don't have to install anything. Sources:
-- Valheim → Thunderstore
-- Satisfactory → ficsit.app (GraphQL)
-- Palworld → curated GitHub Releases list
-- ARK ASA/SE → Steam Workshop by ID
-- Windrose → no community marketplace yet
+RCON is the feature I use most. The Players window shows who's online, refreshes every 10 seconds, has kick/ban/broadcast buttons. Source-engine RCON for Palworld, with a pluggable interface for other dialects. There's a separate Console window if you want to type raw RCON commands.
 
-Thunderstore dependencies resolve recursively. The Mods window has Check-for-updates and Update-all buttons.
+If a server goes from Running to NotRunning without you clicking Stop, the agent counts that as a crash and posts to a Discord webhook if you've configured one for that server.
 
-**RCON.** Source-engine RCON for Palworld; pluggable `IGameRcon` for others. The Players window auto-refreshes every 10 seconds with kick/ban/broadcast/shutdown. The Console window keeps the raw-command interface for power users.
+You can connect to multiple agents from the same dashboard. Settings holds a list of agent URLs and tokens. Servers from every agent merge into one list, each card shows which host owns it, and actions route to the right agent automatically.
 
-**Backups + restore.** Zip-based for bare-metal (save-dir archives with configurable retention), Hyper-V checkpoint for VMs. The Backups window lists every archive with restore and delete actions; restore takes a safety snapshot of the current state first.
+Tokens live in `tokens.json` next to `servers.json` on the agent. Two roles, Admin and ReadOnly. Anything that mutates state needs Admin. The Tokens window in the client manages them.
 
-**Scheduled maintenance.** Daily restart, weekly SteamCMD update, hourly backup. On Windows this drives Task Scheduler; on Linux you wire up systemd timers that POST to the agent's API (recipe below); on macOS use LaunchAgent calendar intervals.
+## Stuff that isn't there yet
 
-**Discord webhooks.** Per-server URL. Posts start, stop, crash detection, and backup events as colored embeds.
+There's no Docker image. The agent itself runs fine in a container but the Create Server flow shells out to steamcmd against the host filesystem, which makes a containerized story awkward. I'll get there.
 
-**Resource monitor.** Live CPU and RAM polylines per server with five minutes of rolling history.
+VM hosting is Windows-only because Hyper-V is Windows-only. Linux and Mac users just use bare-metal mode, which is what most people want anyway.
 
-**Federation.** Add multiple agents in Settings. The dashboard merges every server from every agent into one list with an agent badge on each card; actions route automatically.
+No native client on Mac or Linux. The browser UI covers it. Open to a contributor doing an Avalonia or MAUI port if anyone really wants one.
 
-**Tokens + roles.** Multi-user token store in `tokens.json` with Admin and ReadOnly roles. State-mutating verbs (POST/PUT/DELETE) require Admin; GETs accept any authenticated token. The legacy single-token setup still works as an Admin fallback.
+The Discord webhook is fire-and-forget. If Discord is down when a crash happens the event is lost, not retried.
 
-**Other.** Live status + log tail over SignalR; first-run API token auto-generation; per-request audit log; HTTPS with self-signed cert; designed to bind to a Tailscale IP and stay off the public internet.
+The in-app update banner notifies you when there's a new release but doesn't self-update. Auto-replacing a running service is a footgun I didn't want to ship.
 
-## Supported games
+ARK ASA is fifty gigabytes. Plan your disk before clicking Install.
 
-| Game | Steam App ID | Curated schema | Auto-discovery |
-|---|---|---|---|
-| Windrose | 4129620 | 16 fields | — |
-| Valheim | 896660 | 27 fields | — |
-| Satisfactory | 1690800 | 21 fields (incl. live AGS) | via Admin API |
-| Palworld | 2394010 | 53 fields | +56 from `DefaultPalWorldSettings.ini` |
-| ARK: Survival Ascended | 2430930 | preset | — |
-| ARK: Survival Evolved | 376030 | preset | — |
-| Rust | 258550 | preset | — |
-| Project Zomboid | 380870 | preset | — |
-| 7 Days to Die | 294420 | preset | — |
-| Terraria | 105600 | preset | — |
-| Don't Starve Together | 343050 | preset | — |
-| Minecraft (Java) | — | preset | — |
+## Platforms
 
-Adding a new game with a curated schema is ~30 lines in `Shared/ConfigSchema.cs` plus an optional `IGameConfig` to read/write its config file.
+Agent runs on Windows, Linux, and macOS (Apple Silicon and Intel). Desktop client only runs on Windows. Hyper-V mode only on Windows. Everything else is the same across all three.
 
-## Platform support
+On Windows the agent is a regular Windows service. On Linux it's a systemd unit. On macOS it's a per-user LaunchAgent in `~/Library/LaunchAgents`, which means you'll want auto-login enabled on a headless Mac so it starts on boot.
 
-| | Windows | Linux | macOS |
-|---|---|---|---|
-| Bare-metal hosting | yes | yes | yes |
-| Hyper-V VM hosting | yes | no | no |
-| Agent auto-restart on crash | Windows service | systemd `Restart=on-failure` | LaunchAgent `KeepAlive=true` |
-| Game-server autostart on boot | built-in Task Scheduler wrapper | user systemd unit | user LaunchAgent |
-| Scheduled maintenance API | Task Scheduler | manual systemd timer | manual LaunchAgent calendar |
-| Native desktop client | yes (WPF) | no (use browser UI) | no (use browser UI) |
-| Browser UI | yes | yes | yes |
+## Adding a game
+
+Three pieces, in order of effort:
+
+Add a row to `Shared/GamePresets.cs` with the Steam app ID, default exe path, args, save dirs. That's the minimum, gets you Install / Start / Stop / Backup. If the game has a settings file you want an editor for, implement `IGameConfig`. Easiest is to copy `Config/ValheimConfig.cs` or `Config/PalworldConfig.cs` and adapt. If the game uses a non-standard RCON dialect, implement `IGameRcon`.
+
+PRs welcome.
 
 ## Repo layout
 
-```
-src/
-  GameServerControl.Shared/   DTOs, ConfigSchema, RconModels
-  GameServerControl.Agent/    ASP.NET Core service. Talks to Hyper-V, host processes, RCON.
-    Auth/                     Token auth, audit log, role enforcement, first-run token generator
-    Admin/                    Satisfactory HTTPS Admin API client
-    Config/                   IGameConfig + per-game read/write + dynamic schema providers
-    Discovery/                Steam library scan, appmanifest parser, server detection
-    Hyperv/                   VM control, PowerShell Direct, local + guest process services
-    Mods/                     IModManager + per-game implementations + Thunderstore/ficsit clients
-    Notifications/            Discord webhook, GitHub release update checker
-    Rcon/                     Source-engine RCON + per-game glue
-    Servers/                  Registry, store, orchestrator, status tracker, SteamCMD installer
-    WebUi/                    Single-file HTML/JS browser dashboard
-  GameServerControl.Client/   WPF desktop dashboard
-deploy/
-  windows/install.ps1, install-client.ps1
-  linux/install-from-release.sh, gameservercontrol-agent.service
-  macos/install-from-release.sh, com.tk-eclipse.gameservercontrol-agent.plist
-.github/workflows/
-  build.yml      builds on every push, uploads artifacts
-  release.yml    builds on v* tags, attaches zips/tarballs to a GitHub Release
-```
-
-## Usage
-
-After install, open the dashboard (client or browser).
-
-To register an existing dedicated-server install: click Discover (it scans Steam libraries and common paths) or Add for a manual entry.
-
-To install a new server from scratch: click Create Server, pick the game, choose a path, hit Install. The agent runs SteamCMD and registers the server when it finishes.
-
-To start, stop, restart, back up, update via SteamCMD, edit config, view live logs, manage mods, kick players, or schedule maintenance: use the per-server card buttons.
-
-To manage tokens: Tokens in the header (Admin only).
-
-To connect a client to multiple hosts: Settings, then add a row per agent.
-
-## API
-
-`GET  /api/health` · `GET /api/version` · `GET /api/servers` · `POST /api/servers` (create row) · `POST /api/servers/install` (SteamCMD install) · `PUT /api/servers/{id}` · `DELETE /api/servers/{id}` · `POST /api/servers/{id}/{start|stop|restart|backup|update|apply}` · `GET /api/servers/{id}/status` · `GET /api/status` · `GET/PUT /api/servers/{id}/config` · `GET /api/servers/{id}/backups` · `POST /api/servers/{id}/backups/{name}/restore` · `DELETE /api/servers/{id}/backups/{name}` · `GET/POST/DELETE /api/servers/{id}/schedule` · `GET /api/servers/{id}/mods` · `GET /api/servers/{id}/mods/search` · `POST /api/servers/{id}/mods/install` · `POST /api/servers/{id}/mods/{modId}/update` · `DELETE /api/servers/{id}/mods/{modId}` · `GET /api/servers/{id}/mods/updates` · `GET /api/servers/{id}/rcon/players` · `POST /api/servers/{id}/rcon/command` · `GET /api/servers/{id}/autostart` · `POST /api/servers/{id}/autostart` · `GET /api/discover` · `GET/POST/DELETE /api/tokens` · `POST /api/discord/test`
-
-SignalR hub at `/hubs/status` pushes `statusChanged`, `logLine`, and `installProgress`.
-
-Bearer token in `Authorization` header for all `/api/*` (or `?access_token=` for SignalR).
-
-## Security
-
-- Token generated at first run; written to `appsettings.json`. Rotate by editing the file or by creating a new token via the Tokens window and revoking the old one.
-- Role enforcement middleware rejects POST/PUT/DELETE/PATCH from ReadOnly tokens with 403.
-- HTTPS with a self-signed cert generated on first run. Designed to live on a private network (Tailscale, LAN). Do not expose the agent's port to the public internet.
-- Every authenticated mutation is logged to `Logs/audit/audit-YYYY-MM-DD.jsonl` with token id, IP, method, path, and outcome.
-
-## Contributing
-
-PRs welcome. The `Plan` agent in `.claude/agents/` is set up if you use Claude Code; otherwise standard `dotnet build` + `dotnet test` works on all three platforms.
-
-Adding a new game: drop a preset in `Shared/GamePresets.cs`, optionally implement `IGameConfig` for its settings file, and (if it has an RCON variant) `IGameRcon` for the protocol.
+    src/
+      GameServerControl.Shared/   DTOs, schemas, models
+      GameServerControl.Agent/    The service. ASP.NET Core 8.
+        Auth/                     Tokens, roles, audit log
+        Config/                   Per-game config editors
+        Discovery/                Steam library + appmanifest parsing
+        Hyperv/                   VM control, PowerShell Direct, local process service
+        Mods/                     Per-game mod managers
+        Notifications/            Discord webhook, update checker
+        Rcon/                     RCON glue
+        Servers/                  Orchestrator, store, SteamCMD installer
+        WebUi/                    Single HTML file
+      GameServerControl.Client/   WPF desktop dashboard
+    deploy/                       Install scripts + service definitions
+    .github/workflows/            CI, tagged-release pipeline
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. See LICENSE.
 
 ---
 
-Maintained by TK-ECLIPSE. [paypal.me/TKECLIPSE](https://paypal.me/TKECLIPSE) if you find it useful.
+Maintained by TK-ECLIPSE. https://paypal.me/TKECLIPSE if you want to throw a few bucks.

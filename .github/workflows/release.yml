@@ -201,29 +201,15 @@ jobs:
             GameServerControl-Install-Linux.sh
             GameServerControl-Install-macOS.sh
           body: |
-            ## TK-ECLIPSE GameServerControl ${{ steps.tag.outputs.tag }}
+            Install commands:
 
-            ### One-line install
+                # Windows (admin PowerShell)
+                iwr https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/windows/install.ps1 | iex
 
-            **Windows** (PowerShell as Administrator):
-            ```powershell
-            iwr https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/windows/install.ps1 | iex
-            ```
+                # Linux
+                curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/linux/install-from-release.sh | sudo bash
 
-            **Linux** (any modern distro with systemd):
-            ```bash
-            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/linux/install-from-release.sh | sudo bash
-            ```
+                # macOS
+                curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/macos/install-from-release.sh | bash
 
-            **macOS** (Apple Silicon or Intel — no sudo needed):
-            ```bash
-            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/deploy/macos/install-from-release.sh | bash
-            ```
-
-            ### Manual install
-
-            Download the appropriate zip/tarball below, extract, and follow the README. The agent generates an API token on first boot — paste it into the dashboard.
-
-            ---
-
-            🤖 Built by TK-ECLIPSE  ·  ❤ [Donate via PayPal](https://paypal.me/TKECLIPSE)
+            Or download a zip/tarball below and follow the README.
