@@ -4,7 +4,7 @@ I host game servers for me and a few friends. After getting fed up with SSH and 
 
 It's a service you install on the machine your game servers live on. You point a browser at it (or the Windows desktop client) and you get a dashboard for everything: install new servers, start/stop them, browse mods, manage RCON, take backups, schedule maintenance, see when something's crashed.
 
-Right now it handles Valheim, Satisfactory, Palworld, ARK Survival Ascended, ARK Survival Evolved, Rust, V Rising, 7 Days to Die, Terraria, Don't Starve Together, Project Zomboid, Minecraft Java, and Windrose. Adding more is a couple files of work, see the bottom of this doc.
+Right now it handles Valheim, Satisfactory, Palworld, ARK Survival Ascended, ARK Survival Evolved, Rust, V Rising, Conan Exiles, Squad, Soulmask, 7 Days to Die, Terraria, Don't Starve Together, Project Zomboid, Minecraft Java, and Windrose. Adding more is a couple files of work, see the bottom of this doc.
 
 The agent itself runs on Windows, Linux, and macOS. The desktop client is Windows-only (it's WPF, sorry). Everyone else uses the browser UI which works on phones too.
 

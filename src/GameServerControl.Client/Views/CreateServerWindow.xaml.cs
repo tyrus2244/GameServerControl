@@ -52,6 +52,9 @@ public partial class CreateServerWindow : Window
         _games.Add(new("ark-se",       "ARK: Survival Evolved",   "", "376030",  "~14 GB",  "ArkSE",        GamePresets.FindByKey("ark-se")!));
         _games.Add(new("rust",         "Rust",                    "", "258550",  "~8 GB",   "Rust",         GamePresets.FindByKey("rust")!));
         _games.Add(new("vrising",      "V Rising",                "", "1829350", "~3 GB",   "VRising",      GamePresets.FindByKey("vrising")!));
+        _games.Add(new("conan",        "Conan Exiles",            "", "443030",  "~50 GB",  "ConanServer",  GamePresets.FindByKey("conan")!));
+        _games.Add(new("squad",        "Squad",                   "", "403240",  "~40 GB",  "SquadServer",  GamePresets.FindByKey("squad")!));
+        _games.Add(new("soulmask",     "Soulmask",                "", "3017310", "~20 GB",  "SoulmaskServer", GamePresets.FindByKey("soulmask")!));
         _games.Add(new("7dtd",         "7 Days to Die",           "", "294420",  "~2 GB",   "SevenDaysToDie", GamePresets.FindByKey("7dtd")!));
         _games.Add(new("terraria",     "Terraria",                "", "105600",  "~0.5 GB", "Terraria",     GamePresets.FindByKey("terraria")!));
         _games.Add(new("dst",          "Don't Starve Together",   "",  "343050",  "~1 GB",   "DST",          GamePresets.FindByKey("dst")!));

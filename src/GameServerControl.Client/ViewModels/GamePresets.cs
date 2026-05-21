@@ -49,6 +49,18 @@ public static class GamePresets
             new[]{ "-persistentDataPath", @".\save-data", "-serverName", "My V Rising Server", "-saveName", "world1", "-logFile", @".\logs\VRisingServer.log" },
             new[]{ @"C:\VRisingServer\save-data" }),
 
+        new("conan",   "Conan Exiles",          GameType.SteamGeneric,  "443030",   @"ConanSandboxServer.exe",          @"C:\ConanServer",
+            new[]{ "-log", "-MULTIHOME=0.0.0.0", "-Port=7777", "-QueryPort=27015" },
+            new[]{ @"C:\ConanServer\ConanSandbox\Saved" }),
+
+        new("squad",   "Squad",                  GameType.SteamGeneric,  "403240",   @"SquadGameServer.exe",             @"C:\SquadServer",
+            new[]{ "-log", "-Port=7787", "-QueryPort=27165", "-MultiHome=0.0.0.0" },
+            new[]{ @"C:\SquadServer\SquadGame\Saved" }),
+
+        new("soulmask","Soulmask",               GameType.SteamGeneric,  "3017310",  @"WS\Binaries\Win64\WSServer.exe",  @"C:\SoulmaskServer",
+            new[]{ "-log", "Level01_Main", "-server", "-SteamServerName=My Soulmask Server" },
+            new[]{ @"C:\SoulmaskServer\WS\Saved" }),
+
         new("rust",     "Rust",                  GameType.SteamGeneric,  "258550",   @"RustDedicated.exe",               @"C:\RustServer",
             new[]{ "-batchmode", "+server.port", "28015", "+rcon.port", "28016", "+rcon.password", "changeme", "+server.hostname", "My Rust Server" },
             new[]{ @"C:\RustServer\server" }),
