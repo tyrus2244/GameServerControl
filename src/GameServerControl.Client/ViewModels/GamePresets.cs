@@ -45,6 +45,10 @@ public static class GamePresets
             Array.Empty<string>(),
             new[]{ @"C:\Users\Administrator\Zomboid" }),
 
+        new("vrising", "V Rising",               GameType.SteamGeneric,  "1829350",  @"VRisingServer.exe",               @"C:\VRisingServer",
+            new[]{ "-persistentDataPath", @".\save-data", "-serverName", "My V Rising Server", "-saveName", "world1", "-logFile", @".\logs\VRisingServer.log" },
+            new[]{ @"C:\VRisingServer\save-data" }),
+
         new("rust",     "Rust",                  GameType.SteamGeneric,  "258550",   @"RustDedicated.exe",               @"C:\RustServer",
             new[]{ "-batchmode", "+server.port", "28015", "+rcon.port", "28016", "+rcon.password", "changeme", "+server.hostname", "My Rust Server" },
             new[]{ @"C:\RustServer\server" }),
