@@ -1,0 +1,25 @@
+# Example compose file for running the GameServerControl agent in Docker.
+#
+# Adjust the host paths under "volumes" to match where you want your game-server
+# files, config, and backups to live on the host. The agent installs new servers
+# into /gameservers inside the container, which maps to the path you set below.
+
+services:
+  agent:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: gameservercontrol-agent
+    restart: unless-stopped
+    ports:
+      - "5099:5099"
+    volumes:
+      # Persistent config (appsettings.json, servers.json, tokens.json, SteamCMD cache)
+      - ./data/config:/config
+      # Where Create Server installs land. Bind-mount a big disk here.
+      - ./data/gameservers:/gameservers
+      # Backups
+      - ./data/backups:/backups
+    environment:
+      # Override Agent:Bind here if you need to. Default is 0.0.0.0:5099 (any interface).
+      - Agent__Bind=http://0.0.0.0:5099

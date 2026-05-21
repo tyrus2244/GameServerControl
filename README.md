@@ -58,9 +58,26 @@ You can connect to multiple agents from the same dashboard. Settings holds a lis
 
 Tokens live in `tokens.json` next to `servers.json` on the agent. Two roles, Admin and ReadOnly. Anything that mutates state needs Admin. The Tokens window in the client manages them.
 
-## Stuff that isn't there yet
+## Docker
 
-There's no Docker image. The agent itself runs fine in a container but the Create Server flow shells out to steamcmd against the host filesystem, which makes a containerized story awkward. I'll get there.
+There's a Dockerfile and a docker-compose example under `deploy/docker/`. The image is the agent only (no desktop client, you wouldn't run WPF in a container anyway). It auto-downloads steamcmd into the container on first install, so the host doesn't need it.
+
+To run with compose:
+
+    cd deploy/docker
+    docker compose up -d
+
+Three bind mounts get exposed by the compose file:
+
+    ./data/config        agent config (appsettings.json, servers.json, tokens.json, SteamCMD cache)
+    ./data/gameservers   where Create Server installs land. Point this at a big disk.
+    ./data/backups       zip backups
+
+Adjust the paths to wherever you want them on your host. Port 5099 is forwarded by default.
+
+The container image isn't published to a registry yet, you build it locally. If you want it on Docker Hub or ghcr let me know.
+
+## Stuff that isn't there yet
 
 VM hosting is Windows-only because Hyper-V is Windows-only. Linux and Mac users just use bare-metal mode, which is what most people want anyway.
 

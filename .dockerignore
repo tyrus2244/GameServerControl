@@ -1,0 +1,16 @@
+**/bin
+**/obj
+**/publish
+**/.vs
+**/Logs
+**/Backups
+**/*.user
+publish/
+.git/
+.github/
+.idea/
+.vscode/
+docs/
+tools/
+deploy/
+src/GameServerControl.Client/
